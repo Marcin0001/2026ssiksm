@@ -14,6 +14,9 @@ onecolumn,
 \usepackage{booktabs}
 \usepackage{adjustbox}
 \usepackage{float}
+\usepackage{wrapfig}
+\usepackage{enumitem}
+\setlist[enumerate]{leftmargin=19pt}
 \lstset{breaklines=true}
 
 \SetKwProg{class}{CLASS}{}{}
@@ -81,261 +84,36 @@ This paper presents bird species recognition with sound analysis (using MFCC) an
 
 \section{Methodology}
 
-This section outlines the approach used to compare different methods of audio feature extraction and the development of machine learning models for identifying bird species.
+This section outlines the approach used to compare different configurations of MFCC in audio feature extraction and the development of machine learning models for identifying bird species.
 
 \subsection{Audio Feature Extraction}
 
 Audio feature extraction enables the transformation of birdsong recordings into numerical representations, which are crucial for training machine learning models. A custom library called \textit{SoundFeatures} was developed to implement the full extraction pipeline. This section describes its structure and role within the experimental setup.
-
-\subsubsection{Audio Format Conversion}
-
+\\
 Audio files were converted from MP3 to FLAC format to provide a consistent and lossless compression of the signal. Although this conversion does not restore the data lost during MP3 compression, it eliminates decoding artifacts and ensures stable input for further signal processing \cite{shi2024data}.
 
-\subsubsection{Framing}
+% \vspace{-10pt}
 
-Framing process consists of dividing the signal into smaller pieces. The resulting segments overlap to reduce the risk of cutting important parts, which could lead to data loss. The framing algorithm used in class had a default frame size set to 25ms and hop size set to 10ms. The algorithm extracts frames using a sliding window of fixed length across the entire signal. Every step has a constant value equal to hop size.
-\\
-\begin{algorithm}[H]
-  \caption{Framing method}
-  \SetAlgoLined
-  \class{SoundFeatures}{
-    \SetAlgoVlined
-    \method{frame\_signal(signal, frame\_size, hop\_size)}{
-      frames = []\;
-      \For{i in range(0, lenghtOf(signal) - frame\_size, hop\_size)}{
-        frames.append(signal[i:i\ +\ frame\_size])\;
-      }
-      \Return frames\;
-    }
-    \vdots
-  }
-\end{algorithm}
+\begin{wrapfigure}[12]{r}{0.6\linewidth}
+  \vspace{-17pt}
+\includegraphics[width=1\linewidth]{img/Audio_feature_extraction_flowchart.png}
+\end{wrapfigure}
 
-\begin{figure}
-  \caption{Visual interpretation of signal framing (hop size set to 110ms and frame size set to 330ms)}
-  \includegraphics[width=\linewidth]{img/signal_framing.png}
-\end{figure}
-
-\subsubsection{Windowing}
-Windowing involves applying a function to each frame to taper its edges, which minimizes a phenomenon known as spectral leakage. This effect occurs during the Discrete Fourier Transform (DFT), where the frequency components of a frame spread across multiple frequency bins, reducing the accuracy of spectral representation. Various window functions can be used, with the Hamming and Hann windows being among the most common in audio analysis. A rectangular window can also be applied, but it does not modify the signal, resulting in no reduction of spectral leakage\cite{hamid2018frame}. The Hamming and Hann windows differ in their behaviour at the boundaries: the Hann window tapers to zero at both ends, while the Hamming window retains small non-zero values (equal to 0.08 at the boundaries), resulting in less attenuation at the edges.
-The window functions are defined as follows:
-\begin{itemize}
-  \item Hamming window
-    \[
-      w_{\text{Hamming}}[k]=0.54 - 0.46\cos{\left (\frac{2\pi k}{N-1}\right )}
-    \]
-  \item Hann window
-    \[
-      w_{\text{Hann}}[k]=0.5\cdot\Bigg(1-\cos{\left (\frac{2\pi k}{N-1}\right )\Bigg)}
-    \]
-  \item Rectangular window
-    \[
-      w_{\text{Rect}}[k]=1
-    \]
-\end{itemize}
-where:
-\begin{itemize}
-  \item $N$ - window length
-  \item $k$ - sample index
-\end{itemize}
-
-\begin{figure}[h]
-  \caption{Window charts}
-  \includegraphics[width=\linewidth]{img/window_plots.png}
-  \ \vspace{-22pt}\\
-\end{figure}
-\subsubsection{Transformation}
-
-Audio analysis uses various mathematical transformations to convert time-domain audio into suitable representations for feature extraction (these representations are also suitable for visualization and manipulation)\cite{yustisar2020discrete,tzanetakis2001audio}. Experiments included in this paper focus on frequency domain transformation, specifically on Discrete Fourier Transform (DFT). It maps a signal frame to a set of amplitudes using the following formula:
-\vspace{-8pt}
-\[
-	A_k=\sum\limits_{p=0}^{n-1}a_pe^{-\dfrac{i2\pi kp}{n}}
-  \vspace{-10pt}
-\]
-\vspace{-4pt}
-where:
-\vspace{-3pt}
-\begin{itemize}
-  \item $i$ - imaginary unit
-  \item $k$ - frequency bin index
-  \item $n$ - sample count in frame $a$ (frame length)
-  \item $p$ - sample index in the time domain
-  \item $a_p$ - sample at index $p$ in frame $a$
-\end{itemize}
-\vspace{-4pt}
-However, the DFT's computational complexity reaches $\mathcal{O}(n^2)$, which results in high computational cost (approximately 10 hours on the examined dataset of 21374 audio files). That is why the implementation of Fast Fourier Transform (FFT) is crucial for analysing bigger datasets.
-FFT is an algorithm which consists of decomposing the DFT into smaller stages. There are lots of different FFT algorithms\cite{heckbert1995fourier,soni2011general}, the one implemented in this paper is called \textit{Radix-2 Cooley-Tukey}. This method exploits the symmetry of the DFT by separating the signal into components with even and odd indexes, then computing their transforms separately and combining the results using complex exponential coefficients known as twiddle factors\cite{coelho2024discrete}.
-\\\ \\
-Bit-reversal permutation is used to reorder the input sequence, which enables in-place computing of FFT without additional memory allocation. The algorithm combines pairs of elements at each stage using butterfly operations, which ensures constructing the final frequency-domain  representation of the signal with reduced computational complexity ($\mathcal{O}(N\log_2N)$).
-\\\ \\
-Implementation in SoundFeatures class was divided into fft\_frames method, which processes individual frames, and fft method, which computes the transform of each frame.
-\\\ \\
-\begin{algorithm}[H]
-  \caption{Fast Fourier Transform methods}
-  \SetAlgoLined
-  \class{SoundFeatures}{
-    \vdots
-    \SetAlgoVlined
-    \method{fft\_frames($frames$)} {
-      $result$ = []\;
-      $N_{samples}$ = lengthOf($frames[0]$)\;
-      $N_{fft}$ = $2^{\lceil \log_2N_{samples}\rceil}$\;
-      \For{$frame$ in $frames$} {
-        $padded\_frame$ = array of $N_{fft}$ zeros\;
-        $padded\_frame[0,N_{samples}]$ = $frame$\;
-        $result$.append(SoundFeatures.fft($padded\_frame$))\;
-      }
-      \Return{result}
-    }
-    \;
-    \method{fft($x$)} {
-      $x$ = SoundFeatures.bit\_reverse($x$)\;
-      $n$ = lengthOf($x$)\;
-      \uIf{$n$ == $1$} {
-        \Return{$x$}\;
-      }
-      \uElseIf{$n$ \% $2$ != $0$} {
-        \textbf{raise} ValueError("The number of samples in frame must be the power of $2$")\;
-      }
-      $s$ = $2$\;
-      \For{$s$ in range($1$, $log_2n+1$)} {
-        $m$ = $2^s$\;
-        $half$ = $\left\lfloor\frac{m}{2}\right\rfloor$\;
-        $w_m$ = $e^{-\frac{2i\cdot\pi}{m}}$\;
-        \For{$k$ in range($0$, $n$) jumping by $m$} {
-          $w$ = $1$\;
-          \For{$i$ in range($0$, $half$)} {
-            $a$ = $w\cdot x[k + i + half]$\;
-            $b$ = $x[k + i]$\;
-            $x[k + i]$ = $b + a$\;
-            $x[k + i + half]$ = $b - a$\;
-            $w$ = $w\cdot w_m$\;
-          }
-        }
-      }
-      \Return{$x$}
-    }
-    \vdots
-  }
-\end{algorithm}
-
-\begin{algorithm}[H]
-  \caption{Bit-reversal method}
-  \SetAlgoLined
-  \class{SoundFeatures}{
-    \vdots
-    \SetAlgoVlined
-    \method{bit\_reverse($x$)} {
-      $n$ = lengthOf($x$)\;
-      $k$ = $0$\;
-
-      \For{i in range ($1$, $n$)} {
-        $bit$ = $n$ shifted bitwise right by $1$\;
-        \While{$k$ bitwise AND $bit$ != $0$} {
-          $k$ = $k$ bitwise XOR $bit$\;
-          $bit$ = $bit$ shifted bitwise right by $1$\;
-        }
-        $k$ = bitwise OR $bit$\;
-
-        \If{i < k} {
-          Swap $x[i]$ and $x[k]$\;
-        }
-      }
-      \Return{$x$}
-    }
-    \vdots
-  }
-\end{algorithm}
-\vspace{5pt}
 \noindent
-Even though the FFT algorithm was implemented, experiments included in this paper use numpy, an open-source python library to apply Fast Fourier Transform. The primary reason is improved performance, as numpy is implemented in C, which reduces the overhead associated Python loops, dynamic type checking etc.\cite{muqri2015taste}.\\
-In audio feature extraction, FFT is crucial, as it enables efficient conversion of time-domain frames into their frequency-domain representations.
-\subsubsection{Spectrum}
-
-Spectrum describes how the energy of a signal is distributed across different frequency components. The application of Discrete Fourier Transform (DFT) produces the spectrum, which can be further transformed into other spectral forms. There are various types of spectrum:
-\begin{itemize}
-  \item Magnitude spectrum - describes the amplitude of frequency components.
-  \[
-  M_k = |A_k|
-  \]
-  \item Power spectrum - describes the energy of frequency components.
-  \[
-  P_k = |A_k|^2
-  \]
-  \item Complex spectrum - represents both amplitude and phase information. It is the direct output of DFT.
-  \[
-  C_k = A_k
-  \]
-  \item Normalized power spectrum - represents the energy of frequency components normalized by the frame length, which is useful for comparing frames of different lengths.
-  \[
-  \tilde{P}_k = \frac{|A_k|^2}{N}
-  \]
-\end{itemize}
-where:
-\begin{itemize}
-  \item $A_k$ - output of the DFT at frequency bin $k$
-  \item $k$ - frequency bin index
-  \item $N$ - frame length
-  \item $M_k$ - Magnitude spectrum
-  \item $P_k$ - Power spectrum
-  \item $C_k$ - Complex spectrum
-  \item $\tilde{P}_k$ - Normalized power spectrum
-\end{itemize}
-Birdsongs are highly structured in the frequency domain, and their relevant information is strongly related to energy distribution across frequencies, which makes the power spectrum suitable for analysis of the dataset used in the study.
-
-\subsubsection{Mel Filterbank}
-
-Mel scale is a nonlinear approximation of human auditory perception providing higher resolution at lower frequencies and lower resolution at higher frequencies. Mel filterbank is a set of triangular filters which are distributed according to the Mel scale to reflect human perception of sound. The definition of the Mel scale is given by:
-\[
-  Mel(f)=2595\log_{10}\left (1 + \frac{f}{700} \right )
-\]
-where:
-\begin{itemize}
-  \item $f$ - frequency in Hz
-  \item $Mel(f)$ - frequency in the Mel scale
-\end{itemize}
-The filterbank is constructed by creating a set of equally spaced points in Mel scale, which are then mapped back into Hz values (the linear frequency scale). As a result, the points become densely concentrated in the lower frequencies and more sparse at higher frequencies, creating triangular filters which emphasize a specific frequency range while attenuating others. The filters overlap, ensuring smooth transitions between various frequency ranges\cite{ghosh2012comparative}. The number of filters is a parameter that affects the resolution of the representation and is examined in the experimental section of this paper.
-\begin{algorithm}[H]
-  \caption{Mel filterbank method}
-  \SetAlgoLined
-  \class{SoundFeatures}{
-    \vdots
-    \SetAlgoVlined
-    \method{mel\_filterbank($n$, $sample\_rate$, $N_{filters} = 26$, $f_{min} = 0$, $f_{max} =$ None)} {
-      \If{$f_{max}$ is None} {
-        $f_{max} = \frac{sample\_rate}{2}$\;
-      }
-      $mel_{min}$ = SoundFeatures.hz\_to\_mel($f_{min}$)\;
-      $mel_{max}$ = SoundFeatures.hz\_to\_mel($f_{max}$)\;
-      $mel_points$ = array of $N_{filters}+2$ equally spaced values between $mel_{min}$ and $mel_{max}$\;
-      $hz\_points$ = SoundFeatures.mel\_to\_hz($mel\_points$)\;
-      $bin\_indices$ = $\lfloor (n + 1) \cdot \frac{hz\_points}{sample\_rate}\rfloor$\;
-      $mel\_filterbank$ = array of $N_{filters}$ arrays filled with $\lfloor \frac{n}{2}\rfloor + 1$ zeros\;
-      \For{$m$ in range($1$, $N_{filters} + 1$)} {
-        $f_m = bin\_indices[m]$\;
-        $f_m^{prev} = bin\_indices[m - 1]$\;
-        $f_m^{next} = bin\_indices[m + 1]$\;
-        \For{$k$ in range($f_m^{prev}$,$f_m$)} {
-          $mel\_filterbank[m - 1][k]$ = $\frac{k - f_m^{prev}}{f_m - f_m^{prev}}$\;
-        }
-        \For{$k$ in range($f_m$, $f_m^{next}$)} {
-          $mel\_filterbank[m - 1][k] = \frac{f_m^{next} - k}{f_m^{next} - f_m}$\;
-        }
-      }
-      \Return{mel\_filterbank}
-    }
-    \vdots
-  }
-\end{algorithm}
-\vspace{-15pt}
-\begin{figure}[h]
-  \caption{Mel filterbanks with various counts of filters}
-  \includegraphics[width=\linewidth]{img/mel_filterbank_filters.png}
-\end{figure}
-
-\subsubsection{Mel Energies}
-
-\subsubsection{Mel-Frequency Cepstral Coefficients}
+The audio feature extraction process consists of the following steps:
+\begin{enumerate}[nosep]
+  \item \textbf{Framing} - Segmenting the signal into short, overlapping frames.
+  \item \textbf{Windowing} - Applying a window function to each frame to minimize spectral leakage at the boundaries.
+  \item \textbf{Fast Fourier Transform (FFT)} - Mapping a time-domain signal into its frequency-domain representation. 
+\end{enumerate}
+\ 
+\begin{enumerate}[nosep]
+  \setcounter{enumi}{3}
+  \item \textbf{Power Spectrum} - Computing the energy distribution representation.
+  \item \textbf{Mel Filterbank Processing} - Constructing a set of triangular filters using Mel scale.
+  \item \textbf{Log Energy Calculation} - Mapping the linear frequency spectrum to Mel scale using Mel filterbank.
+  \item \textbf{Discrete Cosine Transform (DCT)} - Decorrelating the log energies to get Mel-Frequency Cepstral Coefficients
+\end{enumerate}
 
 \subsection{Machine Learning Algorithms}
 
