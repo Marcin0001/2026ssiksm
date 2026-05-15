@@ -96,7 +96,7 @@ Audio files were converted from MP3 to FLAC format to provide a consistent and l
 
 \begin{wrapfigure}[12]{r}{0.6\linewidth}
   \vspace{-17pt}
-\includegraphics[width=1\linewidth]{img/Audio_feature_extraction_flowchart.png}
+  \includegraphics[width=1\linewidth]{img/Audio_feature_extraction_flowchart.png}
 \end{wrapfigure}
 
 \noindent
@@ -117,7 +117,73 @@ The audio feature extraction process consists of the following steps:
 
 \subsection{Machine Learning Algorithms}
 
+\newpage
+
 \section{Experiments}
+
+\subsection{Audio Feature Extraction}
+
+To analyse the MFCC efficiency based on the number of Mel filters and extracted features the experiments were conducted on dataset which was reduced to 1148 records. Both the Random Forest and the Neural Network were applied to check the F1 score for every configuration.
+\vspace{-5pt}
+\begin{figure}[htbp]
+  \centering
+  \caption{Random Forest F1 Score heatmaps for datasets with and without first coefficient}
+  \begin{subfigure}{0.4665\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{img/rf_results_if0.png}
+    \caption{Dataset with every coefficient}
+  \end{subfigure}
+  \begin{subfigure}{0.524\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{img/rf_results_if1.png}
+    \caption{Dataset without first coefficient}
+  \end{subfigure}
+\end{figure}
+
+\vspace{-27pt}
+\begin{center}
+\rule{0.9\linewidth}{1pt}
+\end{center}
+\vspace{-20pt}
+
+\begin{figure}[htbp]
+  \centering
+  \caption{Neural Network F1 Score heatmaps for datasets with and without first coefficient}
+  \begin{subfigure}[b]{0.4665\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{img/nn_results_if0.png}
+    \caption{Dataset with every coefficient}
+  \end{subfigure}
+  \begin{subfigure}[b]{0.524\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{img/nn_results_if1.png}
+    \caption{Dataset without first coefficient}
+  \end{subfigure}
+\end{figure}
+
+\vspace{-30pt}
+\begin{center}
+\rule{0.9\linewidth}{1pt}
+\end{center}
+\vspace{-20pt}
+
+\begin{figure}[htbp]
+  \centering
+  \caption{Best results}
+  \begin{tabular}{|c|c|c|c|c|}
+    \hline
+    Algorithm & N Coefficients & N Filters & First Coefficient Ignored & F1 Score \\\hline
+    Random Forest & 24 & 178 & No & 0.6669 \\\hline
+    Random Forest & 28 & 198 & Yes & 0.6618 \\\hline
+    Neural Network & 48 & 150 & No & 0.8472 \\\hline
+    Neural Network & 49 & 156 & Yes & 0.8454 \\\hline
+  \end{tabular}
+\end{figure}
+\vspace{20pt}
+\noindent
+While standard speech recognition systems typically employ 13 Mel coefficients and between 26 and 40 Mel filters, our results demonstrate that bird species identification requires a higher spectral resolution. The optimal configuration for the Neural Network was observed in the range of 45-49 Mel coefficients with at least 58 Mel filters, whereas the Random Forest achieved its best performance with 21-25 Mel coefficients and at least 146 Mel filters. These results emphasize the fact that birdsong contains faster frequency modulations and more complex harmonic structures compared to human speech, requiring a denser filterbank to effectively capture significant parts of the sound, which is essential for accurate species discrimination.
+\\
+The difference in the optimal spectral resolutions between the two models highlights the higher sensitivity of the Random Forest to excessive feature counts, which can degrade its performance. In contrast, the Neural Network effectively manages high-dimensional inputs, achieving better performance by capturing more complex patterns within the given data.
 %Opis bazy
 
 %Opis podziału, testów itd.
