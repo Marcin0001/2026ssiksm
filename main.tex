@@ -117,6 +117,40 @@ The audio feature extraction process consists of the following steps:
 
 \subsection{Machine Learning Algorithms}
 
+\subsubsection{Random Forest}
+
+The Random Forest algorithm was chosen for classification purposes, a well-known ensemble learning method originally introduced by Leo Breiman \cite{breiman2001random}. Essentially, instead of relying on just one model, it constructs a whole bunch of individual decision trees during the training phase and aggregates their predictions to get the final output. Since we are dealing with classification, the model determines the final predicted class by running a majority vote across all the trees in the forest:
+
+\begin{equation}
+	\hat{y} = \arg\max_{c} \sum_{t=1}^{T} \mathbf{1}\left[h_t(\mathbf{x}) = c\right]
+\end{equation}
+
+\noindent In this equation, $T$ stands for the total number of trees, $h_{t}(x)$ is the prediction made by the $t$-th tree for our input $x$, and $c$ represents the possible classes we are trying to predict.\\
+
+\noindent To make the ensemble robust and prevent the trees from being too similar, each tree is trained on what is called a "bootstrap sample"—basically, a random subset of our training data selected with replacement. On top of that, when splitting a node, the algorithm doesn't look at all available features at once. Instead, it only considers a random subset of $m$ features out of the total $p$ features. This clever trick decorrelates the individual trees, which drastically cuts down the overall variance of the model \cite{breiman2001random}.\\
+
+\noindent To pick the best possible split at any given node, the algorithm evaluates how "pure" the resulting splits will be by minimizing the Gini impurity:
+
+\begin{equation}
+	G(S) = 1 - \sum_{c=1}^{C} p_c^2
+\end{equation}
+
+\noindent Here, $S$ is the set of samples currently at the node, $C$ represents the number of classes, and $p_{c}$ is the proportion of samples belonging to class $c$. The actual split into left ($S_{L}$) and right ($S_{R}$) subsets is chosen to maximize the information gain ($\Delta G$):
+
+\begin{equation}
+	\Delta G = G(S) - \frac{|S_L|}{|S|} G(S_L) - \frac{|S_R|}{|S|} G(S_R)
+\end{equation}
+
+\noindent One of the biggest practical advantages of using Random Forests is something called the out-of-bag (OOB) error estimate. Because of how the bootstrap sampling works, roughly 36.8\% of the training data is left out of any single tree's training process on average. We can actually use these left-out samples as an internal validation set. This has a couple of advantages an unbiased estimate of how well our model generalizes without needing to sacrifice data for a separate validation split \cite{breiman2001random}:
+
+\begin{equation}
+	\text{OOB Error} = \frac{1}{N} \sum_{i=1}^{N} \mathbf{1}\left[\hat{y}_i^{\text{OOB}} \neq y_i\right]
+\end{equation}
+
+\noindent In this formula, $\hat{y}_{i}^{OOB}$ is the majority vote prediction for sample $i$ using only the specific trees that did not see this sample during their training, and $N$ is the total number of training samples.\\
+
+\noindent When it comes to classifying bird species from MFCC data, Random Forest gives us a couple of great advantages: its built-in feature importance scores make it easy to identify which spectral coefficients actually matter, and its ensemble structure keeps it from getting easily thrown off by noisy or irrelevant audio features \cite{huang2024recognition, ahmed2023bird}.
+
 \newpage
 
 \section{Experiments}
