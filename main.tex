@@ -200,6 +200,8 @@ The Random Forest algorithm was chosen for classification purposes, a well-known
 
 \noindent When it comes to classifying bird species from MFCC data, Random Forest gives us a couple of great advantages: its built-in feature importance scores make it easy to identify which spectral coefficients actually matter, and its ensemble structure keeps it from getting easily thrown off by noisy or irrelevant audio features \cite{huang2024recognition, ahmed2023bird}.
 
+\subsubsection{Neural Network}
+
 \hl{do uzupelnienia}
 \newpage
 
@@ -272,8 +274,11 @@ To analyse the MFCC efficiency based on the number of Mel filters and extracted 
 While standard speech recognition systems typically employ 13 Mel coefficients and between 26 and 40 Mel filters\cite{joshi2014matlab,mahmood2021speech,al2023mel}, our results demonstrate that bird species identification requires a higher spectral resolution. The optimal configuration for the Neural Network was observed in the range of 45-49 Mel coefficients with at least 58 Mel filters (\ref{nnhm}), whereas the Random Forest achieved its best performance with 21-25 Mel coefficients and at least 146 Mel filters (\ref{rfhm}). These results emphasize the fact that birdsong contains faster frequency modulations and more complex harmonic structures compared to human speech, requiring a denser filterbank to effectively capture significant parts of the sound, which is essential for accurate species discrimination. Both machine learning algorithms achieved higher results analysing every coefficient, including the first one, which represents the volume. The first coefficient often reaches massive values, dominating other coefficients and making machine learning performance dependent on the distance of microphone. However, experiments have shown, that including this coefficient in examined dataset actually improves the efficiency (\ref{br}).
 \\
 The difference in the optimal spectral resolutions between the two models highlights the higher sensitivity of the Random Forest to excessive feature counts, which can degrade its performance. In contrast, the Neural Network effectively manages high-dimensional inputs, achieving better performance by capturing more complex patterns within the given data.
+\subsection{Random Forest}
+\subsection{Neural Network}
 
 \hl{proszę dodać ajką analizę innych metryk typu accuracy, error, analizę sieci neuronowej - ile warstw, dlaczego, co jesli sie zmniejszy ta ilosc itd.}
+
 
 \section{Conclusion}
 \hl{do uzupelnienia}
