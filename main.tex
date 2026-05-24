@@ -276,8 +276,6 @@ While standard speech recognition systems typically employ 13 Mel coefficients a
 The difference in the optimal spectral resolutions between the two models highlights the higher sensitivity of the Random Forest to excessive feature counts, which can degrade its performance. In contrast, the Neural Network effectively manages high-dimensional inputs, achieving better performance by capturing more complex patterns within the given data.
 \subsection{Random Forest}
 
-To select the best model, the algorithms were trained on various parameters. The most important were the criteria (gini, entropy) and max\_features (sqrt, log2, constant). Due to the high power costs and time-consuming nature of Random Forest implementation, the number of trees was set to 100, and the constant for max\_features was set to 2.
-
 \begin{figure}[htbp]
 	\centering
 	\caption{Comparison of Random Forest variants with 100 trees}
@@ -291,10 +289,10 @@ To select the best model, the algorithms were trained on various parameters. The
 		RF(entropy, log2) & 0.2481 & 0.2469 & 0.2432 & 0.9916 & 0.2306 & 0.7519 \\\hline
 		RF(entropy, 2) & 0.2254 & 0.2250 & 0.2233 & 0.9913 & 0.2101 & 0.7746 \\\hline
 	\end{tabular}
-	\label{br}
+	\label{rfc}
 \end{figure}
 
-\noindent Once the best model was found, a search began for the largest number of trees in the forest to improve the algorithm's accuracy. The number of trees was checked successively for 100, 200, 300, 400, and 500 trees. The two models with the highest accuracies were then taken, their tree counts were added, their tree counts were divided by two, and the integer part was taken. The process was repeated until the appropriate number of trees for the highest accuracy was found. If the same result was found for both tree counts, the number of trees that was closer to the number of trees in the second component with the second highest number of trees was used.
+\noindent To select the best model, the algorithms were trained on various parameters. The most important were the criteria (gini, entropy) and max\_features (sqrt, log2, constant). Due to the high power costs and time-consuming nature of Random Forest implementation, the number of trees was set to 100, and the constant for max\_features was set to 2 (\ref{rfc}). \\
 
 \begin{figure}[htbp]
 	\centering
@@ -314,8 +312,10 @@ To select the best model, the algorithms were trained on various parameters. The
 		440 & 0.3199 & 0.3260 & 0.3218 & 0.9924 & 0.3022 & 0.6801 \\\hline
 		441 & 0.3180 & 0.3236 & 0.3198 & 0.9923 & 0.2999 & 0.6820 \\\hline
 	\end{tabular}
-	\label{br}
+	\label{rft}
 \end{figure}
+
+\noindent Once the best model was found, a search began for the largest number of trees in the forest to improve the algorithm's accuracy. The number of trees was checked successively for 100, 200, 300, 400, and 500 trees (\ref{rft}). The two models with the highest accuracies were then taken, their tree counts were added, their tree counts were divided by two, and the integer part was taken. The process was repeated until the appropriate number of trees for the highest accuracy was found. If the same result was found for both tree counts, the number of trees that was closer to the number of trees in the second component with the second highest number of trees was used.
 
 \subsection{Neural Network}
 
