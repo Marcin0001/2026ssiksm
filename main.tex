@@ -48,8 +48,10 @@ email=ma315929@student.polsl.pl
 ]
 \address[1]{Faculty of Applied Mathematics, Silesian University of Technology, Kaszubska 23, 44100 Gliwice, POLAND}
 
-\begin{abstract}
-wstep - 1 akapit, co zrobiono, jakie wyniki, minimum 180 słów
+\begin{abstract}\hl{do uzupelnienia}
+\hl{do uzupelnienia}
+
+wstep : 1 akapit o tym co zrobiono, jakie wyniki, minimum 180 słów
 \end{abstract}
 
 \begin{keywords}
@@ -59,28 +61,13 @@ wstep - 1 akapit, co zrobiono, jakie wyniki, minimum 180 słów
 \maketitle
 
 \section{Introduction}
-Audio analysis is a process of examining and measuring sound signals to gain information, it has been a subject of research for many decades\cite{hollabaugh1963methods}, and now, in the age of artificial intelligence, it has many more applications. Machine learning has become an essential tool in audio signal processing, enabling the development of systems capable of analyzing and classifying sounds. Such systems are widely used in applications including speech recognition\cite{zhu2025systematic}, music\cite{serrano2022new} and animal identification\cite{wood2023pairing}, often outperforming human perception of acoustic patterns\cite{spille2018comparing}.
-\\\ \\
+Audio analysis is a process of examining and measuring sound signals to gain information, it has been a subject of research for many decades\cite{hollabaugh1963methods}, and now, in the age of artificial intelligence, it has many more applications. It allows the interaction between humans and machines through sound, making advanced audio-based systems possible. Such systems include voice assistants, audio user interfaces (AUI) and voice verification. Machine learning has become an essential tool in audio signal processing, enabling the development of systems capable of analyzing and classifying sounds. Such systems are widely used in applications including speech recognition\cite{zhu2025systematic}, music\cite{serrano2022new} and animal identification\cite{wood2023pairing}, often outperforming human perception of acoustic patterns\cite{spille2018comparing}.
+\\
 There are many techniques for feature extraction from sound, one of the most commonly used being Mel-Frequency Cepstral Coefficients (MFCC). This method converts the raw audio signal into a set of coefficients representing the spectral characteristics of sound\cite{abdul2022mel}. Previous studies have established standard configurations for this algorithm, such as the number of Mel filters and cepstral coefficients. However, optimal values depend on specific dataset and application, such as detection of breathing phase\cite{zhantleuova2025optimizing} or respiratory diseases\cite{yan2025optimizing}.
-\\\ \\
+\\
 In addition to sound recognition, various machine learning algorithms have been applied to audio classification tasks, each providing different levels of performance. Simpler algorithms, such as k-nearest neighbors and random forests, are faster, but often less accurate solutions, while the complex ones, like neural networks, provide higher accuracy at the cost of increased computational complexity.
-\\\ \\\ \\
+\\
 This paper presents bird species recognition with sound analysis (using MFCC) and compares different approaches for this system. The sound analysis algorithm consists of many stages, two of them are especially important, because the values they provide depend on chosen data. The number of filters used to describe the frames and number of compressed coefficients strongly affects the performance of the result. Too many features may introduce noise and redundancy, while too few may lead to information loss. The experiments conducted on a common dataset aim to identify the most effective approach for extracting the MFCC features and developing simple classification models with the best performance.
-
-
-
-
-
-
-
-
-
-
-%opis szczegółów, jak działa metodologia, wszystkie wzory
-
-%mile widziany pseudokod w Algorithm2e
-
-%Wizualizacja działania metody - tez może być
 
 \section{Methodology}
 
@@ -92,34 +79,97 @@ Audio feature extraction enables the transformation of birdsong recordings into 
 \\
 Audio files were converted from MP3 to FLAC format to provide a consistent and lossless compression of the signal. Although this conversion does not restore the data lost during MP3 compression, it eliminates decoding artifacts and ensures stable input for further signal processing \cite{shi2024data}.
 
-% \vspace{-10pt}
-
-\begin{wrapfigure}[12]{r}{0.6\linewidth}
-  \vspace{-17pt}
+\begin{figure}[h]
   \includegraphics[width=1\linewidth]{img/Audio_feature_extraction_flowchart.png}
-\end{wrapfigure}
+  \label{afeflowchart}
+  \caption{Audio feature extraction process flowchart}
+\end{figure}
 
 \noindent
-The audio feature extraction process consists of the following steps:
+The audio feature extraction process consists of the following steps (\ref{afeflowchart}):
 \begin{enumerate}[nosep]
   \item \textbf{Framing} - Segmenting the signal into short, overlapping frames.
-  \item \textbf{Windowing} - Applying a window function to each frame to minimize spectral leakage at the boundaries.
+  \item \textbf{Windowing} - Applying a window function to each frame to minimize spectral leakage at the boundaries. The experiments consisted of Hamming window function.
+    \end{enumerate}
+    \vspace{10pt}
+    \[
+      w_{\text{Hamming}}[k]=0.54 - 0.46\cos{\left (\frac{2\pi k}{N-1}\right )}
+    \]
+    \begin{enumerate}[nosep]
+  \setcounter{enumi}{2}
   \item \textbf{Fast Fourier Transform (FFT)} - Mapping a time-domain signal into its frequency-domain representation. 
-\end{enumerate}
-\ 
-\begin{enumerate}[nosep]
-  \setcounter{enumi}{3}
+  \[
+	A_k=\sum\limits_{p=0}^{n-1}a_pe^{-\dfrac{i2\pi kp}{n}}
+  \vspace{-10pt}
+    \]
+    \vspace{-4pt}
+    where:
+    \vspace{-3pt}
+    \begin{itemize}
+      \item $i$ - imaginary unit
+      \item $k$ - frequency bin index
+      \item $n$ - sample count in frame $a$ (frame length)
+      \item $p$ - sample index in the time domain
+      \item $a_p$ - sample at index $p$ in frame $a$
+    \end{itemize}
   \item \textbf{Power Spectrum} - Computing the energy distribution representation.
-  \item \textbf{Mel Filterbank Processing} - Constructing a set of triangular filters using Mel scale.
+  \[
+  \tilde{P}_k = \frac{|A_k|^2}{N}
+  \]
+  where:
+    \begin{itemize}
+        \item $A_k$ - output of the DFT at frequency bin $k$
+        \item $k$ - frequency bin index
+        \item $N$ - frame length
+        \item $\tilde{P}_k$ - Normalized power spectrum
+    \end{itemize}
+  \item \textbf{Mel Filterbank Processing} - Constructing a set of triangular filters using Mel scale. This process consists of transferring a vector containing equally distributed Mel-frequency values in the range from $Mel(f_{min})$ to $Mel(f_{max})$ back to Herzian scale to develop the filterbank.
+  \[
+    Mel(f)=2595\log_{10}\left (1 + \frac{f}{700} \right ) \Rightarrow f=700\cdot10^{\frac{Mel(f)}{2595}-1}
+  \]
+    where:
+    \begin{itemize}
+      \item $f$ - frequency in Hz
+      \item $Mel(f)$ - frequency in the Mel scale
+    \end{itemize}
+    
+    \[
+    	H_m(k)=
+    	\begin{cases}
+    		0, & k < f_{m-1} \lor k > f_{m+1}\\
+    		\dfrac{k-f_{m-1}}{f_{m}-f_{m-1}}, & f_{m-1} \le k \le f_{m}\\
+    		\dfrac{f_{m+1}-k}{f_{m+1}-f_{m}}, & f_{m} \le k \le f_{m+1}
+    	\end{cases}
+	\]
+	where:
+	\begin{itemize}
+		\item $m$ - filter number
+		\item $k$ - index of sample frequency
+		\item $f$ - vector of filters in Herzian scale
+        \item $H$ - Mel filterbank
+	\end{itemize}
   \item \textbf{Log Energy Calculation} - Mapping the linear frequency spectrum to Mel scale using Mel filterbank.
+  \[
+    S_m^{log}=\log_{10}\left (\sum\limits_k P_k\cdot H_m(k)\right )
+  \]
   \item \textbf{Discrete Cosine Transform (DCT)} - Decorrelating the log energies to get Mel-Frequency Cepstral Coefficients
+  \[
+	c_m=\sum\limits^{k-1}_{p=0}S_m^{log}\cdot \cos{\left (\dfrac{\pi m(p+0.5)}{k}\right )}
+	\]
+	where:
+	\begin{itemize}
+		\item m - Mel coefficient index
+		\item k - Chosen count of Mel coefficients
+        \item c - Mel coefficient vector
+	\end{itemize}
 \end{enumerate}
 
 \subsection{Machine Learning Algorithms}
-
+\hl{do uzupelnienia}
 \newpage
 
 \section{Experiments}
+\hl{brakuje opisu zbioru danych, podzialu danych, jak również informacji o wykorzystanym sprzecie do obliczeń}
 
 \subsection{Audio Feature Extraction}
 
@@ -127,7 +177,6 @@ To analyse the MFCC efficiency based on the number of Mel filters and extracted 
 \vspace{-5pt}
 \begin{figure}[htbp]
   \centering
-  \caption{Random Forest F1 Score heatmaps for datasets with and without first coefficient}
   \begin{subfigure}{0.4665\linewidth}
     \centering
     \includegraphics[width=\linewidth]{img/rf_results_if0.png}
@@ -138,6 +187,8 @@ To analyse the MFCC efficiency based on the number of Mel filters and extracted 
     \includegraphics[width=\linewidth]{img/rf_results_if1.png}
     \caption{Dataset without first coefficient}
   \end{subfigure}
+  \caption{Random Forest F1 Score heatmaps for datasets with and without first coefficient}
+  \label{rfhm}
 \end{figure}
 
 \vspace{-27pt}
@@ -148,7 +199,6 @@ To analyse the MFCC efficiency based on the number of Mel filters and extracted 
 
 \begin{figure}[htbp]
   \centering
-  \caption{Neural Network F1 Score heatmaps for datasets with and without first coefficient}
   \begin{subfigure}[b]{0.4665\linewidth}
     \centering
     \includegraphics[width=\linewidth]{img/nn_results_if0.png}
@@ -159,6 +209,8 @@ To analyse the MFCC efficiency based on the number of Mel filters and extracted 
     \includegraphics[width=\linewidth]{img/nn_results_if1.png}
     \caption{Dataset without first coefficient}
   \end{subfigure}
+  \caption{Neural Network F1 Score heatmaps for datasets with and without first coefficient}
+  \label{nnhm}
 \end{figure}
 
 \vspace{-30pt}
@@ -178,26 +230,19 @@ To analyse the MFCC efficiency based on the number of Mel filters and extracted 
     Neural Network & 48 & 150 & No & 0.8472 \\\hline
     Neural Network & 49 & 156 & Yes & 0.8454 \\\hline
   \end{tabular}
+  \label{br}
 \end{figure}
 \vspace{20pt}
 \noindent
-While standard speech recognition systems typically employ 13 Mel coefficients and between 26 and 40 Mel filters\cite{joshi2014matlab,mahmood2021speech,al2023mel}, our results demonstrate that bird species identification requires a higher spectral resolution. The optimal configuration for the Neural Network was observed in the range of 45-49 Mel coefficients with at least 58 Mel filters, whereas the Random Forest achieved its best performance with 21-25 Mel coefficients and at least 146 Mel filters. These results emphasize the fact that birdsong contains faster frequency modulations and more complex harmonic structures compared to human speech, requiring a denser filterbank to effectively capture significant parts of the sound, which is essential for accurate species discrimination.
+While standard speech recognition systems typically employ 13 Mel coefficients and between 26 and 40 Mel filters\cite{joshi2014matlab,mahmood2021speech,al2023mel}, our results demonstrate that bird species identification requires a higher spectral resolution. The optimal configuration for the Neural Network was observed in the range of 45-49 Mel coefficients with at least 58 Mel filters (\ref{nnhm}), whereas the Random Forest achieved its best performance with 21-25 Mel coefficients and at least 146 Mel filters (\ref{rfhm}). These results emphasize the fact that birdsong contains faster frequency modulations and more complex harmonic structures compared to human speech, requiring a denser filterbank to effectively capture significant parts of the sound, which is essential for accurate species discrimination. Both machine learning algorithms achieved higher results analysing every coefficient, including the first one, which represents the volume. The first coefficient often reaches massive values, dominating other coefficients and making machine learning performance dependent on the distance of microphone. However, experiments have shown, that including this coefficient in examined dataset actually improves the efficiency (\ref{br}).
 \\
 The difference in the optimal spectral resolutions between the two models highlights the higher sensitivity of the Random Forest to excessive feature counts, which can degrade its performance. In contrast, the Neural Network effectively manages high-dimensional inputs, achieving better performance by capturing more complex patterns within the given data.
-%Opis bazy
 
-%Opis podziału, testów itd.
-
-
-%Należy dodać wykresy, analizy i wszystko szczegółowo omówić - co widać na wykresach, %dlaczego itd.
+\hl{proszę dodać ajką analizę innych metryk typu accuracy, error, analizę sieci neuronowej - ile warstw, dlaczego, co jesli sie zmniejszy ta ilosc itd.}
 
 \section{Conclusion}
+\hl{do uzupelnienia}
 
-
-%% Define the bibliography file to be used
 \bibliography{bibliography}
 
 \end{document}
-
-%%
-%% End of file
