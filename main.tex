@@ -202,7 +202,64 @@ The Random Forest algorithm was chosen for classification purposes, a well-known
 
 \subsubsection{Neural Network}
 
-\hl{do uzupelnienia}
+\noindent The second classification model used in this study was a neural network. The concept of artificial neural networks dates back to the work of McCulloch and Pitts, who proposed an early mathematical model of a neuron in 1943 \cite{mcculloch1943logical}. The model used in this work belongs to the class of feedforward neural networks, also known as multilayer perceptrons. Such models are composed of interconnected computational units called neurons, organized into an input layer, one or more hidden layers, and an output layer \cite{goodfellow2016deep}. The input layer receives the MFCC feature vector, hidden layers transform it into internal representations, and the output layer produces the final class prediction.
+
+\noindent Each layer applies a linear transformation followed by a non-linear activation function:
+
+\begin{equation}
+    z = XW + b
+\end{equation}
+
+\begin{equation}
+    a = f(z)
+\end{equation}
+
+\noindent where \(X\) is the input matrix, \(W\) is the weight matrix, \(b\) is the bias vector, \(f\) is the activation function, \(z\) is the linear output of the layer, and \(a\) is the activated output. The weights determine the strength of connections between neurons, while the bias terms allow the activation to be shifted independently of the input values.
+
+\noindent The activation function introduces non-linearity into the network. Without a non-linear activation function, a sequence of dense layers would be equivalent to a single linear transformation, limiting the model's ability to learn complex relationships among MFCC features. In the hidden layers, ReLU or Leaky ReLU activation functions were used. ReLU is defined as:
+
+\begin{equation}
+    f_{\text{ReLU}}(z) = \max(0, z)
+\end{equation}
+
+\noindent This function passes positive values unchanged and sets negative values to zero. Leaky ReLU is a modified version of ReLU:
+
+\begin{equation}
+    f_{\text{LeakyReLU}}(z) =
+    \begin{cases}
+        z, & z > 0 \\
+        \alpha z, & z \leq 0
+    \end{cases}
+\end{equation}
+
+\noindent where \(\alpha\) is a small positive coefficient, equal to 0.01 in the implemented model. Unlike standard ReLU, Leaky ReLU keeps a small slope for negative values, which helps preserve gradient flow during training \cite{goodfellow2016deep}.
+
+\noindent For a multi-class classification problem, the output layer was configured to contain one neuron for each bird species. The softmax function was used to transform the raw output values into probabilities:
+
+\begin{equation}
+    \hat{y}_c = \frac{e^{z_c}}{\sum_{j=1}^{C} e^{z_j}}
+\end{equation}
+
+\noindent where \(C\) is the number of classes, \(z_c\) is the output value for class \(c\), and \(\hat{y}_c\) is the predicted probability of this class. The predicted class is selected as the class with the highest probability:
+
+\begin{equation}
+    \hat{y} = \arg\max_c \hat{y}_c
+\end{equation}
+
+\noindent The model was trained by minimizing the categorical cross-entropy loss function:
+
+\begin{equation}
+    L = -\frac{1}{N}\sum_{i=1}^{N}\sum_{c=1}^{C} y_{i,c}\log(\hat{y}_{i,c})
+\end{equation}
+
+\noindent where \(N\) is the number of samples, \(C\) is the number of classes, \(y_{i,c}\) is the true label in one-hot representation, and \(\hat{y}_{i,c}\) is the predicted probability for class \(c\). This loss function is suitable for multi-class classification because it penalizes confident incorrect predictions.
+
+\noindent During training, the error gradient was propagated backwards through the network using backpropagation. This procedure computes how much each parameter contributes to the final error and updates the weights in order to reduce the loss. The implemented network supports both stochastic gradient descent and the Adam optimizer. In the experiments, Adam was used to update the model parameters, because it adapts the learning rate separately for each parameter using estimates of the first and second moments of the gradients \cite{kingma2015adam}.
+
+\noindent The training process was performed using mini-batches. For each batch, the network computed predictions, evaluated the cross-entropy loss, propagated the gradient backwards and updated the model parameters. During training, both loss and accuracy were monitored for the training and validation sets.
+
+\noindent To reduce the risk of overfitting, dropout was applied in the hidden layer. Dropout is a regularization technique in which randomly selected neuron activations are temporarily set to zero during training. As a result, the network cannot rely too strongly on individual neurons and is forced to learn more robust feature representations \cite{srivastava2014dropout}. In the implemented model, dropout was applied only during training and was not used in the output softmax layer. The remaining activations were scaled to preserve the expected signal magnitude.
+
 \newpage
 
 \section{Experiments}
