@@ -25,363 +25,340 @@ onecolumn,
 \DontPrintSemicolon
 
 \begin{document}
-
-\copyrightyear{2026}
-\copyrightclause{Copyright for this paper by its authors.
-  Use permitted under Creative Commons License Attribution 4.0
-  International (CC BY 4.0).}
-
-\conference{SSI, project 2025/2026}
-
-\title{A Comparative Study of Audio Feature Extraction and Machine Learning Methods for Bird Species Classification}
-
-\tnotemark[1]
-
-\author[1]{Kryspin Dziarek}[%
-email=kd315963@student.polsl.pl
-]
-\author[1]{Szymon Pająk}[%
-email=sp315960@student.polsl.pl
-]
-\author[1]{Marcin Adamski}[%
-email=ma315929@student.polsl.pl
-]
-\address[1]{Faculty of Applied Mathematics, Silesian University of Technology, Kaszubska 23, 44100 Gliwice, POLAND}
-
-\begin{abstract}\hl{do uzupelnienia}
-\hl{do uzupelnienia}
-
-wstep : 1 akapit o tym co zrobiono, jakie wyniki, minimum 180 słów
-\end{abstract}
-
-\begin{keywords}
-    Sound analysis\sep Birdsong\sep MFCC (Mel-Frequency Cepstral Coefficients)\sep Random forest\sep Neural network 
-\end{keywords}
-
-\maketitle
-
-\section{Introduction}
-Audio analysis is a process of examining and measuring sound signals to gain information, it has been a subject of research for many decades\cite{hollabaugh1963methods}, and now, in the age of artificial intelligence, it has many more applications. It allows the interaction between humans and machines through sound, making advanced audio-based systems possible. Such systems include voice assistants, audio user interfaces (AUI) and voice verification. Machine learning has become an essential tool in audio signal processing, enabling the development of systems capable of analyzing and classifying sounds. Such systems are widely used in applications including speech recognition\cite{zhu2025systematic}, music\cite{serrano2022new} and animal identification\cite{wood2023pairing}, often outperforming human perception of acoustic patterns\cite{spille2018comparing}.
-\\
-There are many techniques for feature extraction from sound, one of the most commonly used being Mel-Frequency Cepstral Coefficients (MFCC). This method converts the raw audio signal into a set of coefficients representing the spectral characteristics of sound\cite{abdul2022mel}. Previous studies have established standard configurations for this algorithm, such as the number of Mel filters and cepstral coefficients. However, optimal values depend on specific dataset and application, such as detection of breathing phase\cite{zhantleuova2025optimizing} or respiratory diseases\cite{yan2025optimizing}.
-\\
-In addition to sound recognition, various machine learning algorithms have been applied to audio classification tasks, each providing different levels of performance. Simpler algorithms, such as k-nearest neighbors and random forests, are faster, but often less accurate solutions, while the complex ones, like neural networks, provide higher accuracy at the cost of increased computational complexity.
-\\
-This paper presents bird species recognition with sound analysis (using MFCC) and compares different approaches for this system. The sound analysis algorithm consists of many stages, two of them are especially important, because the values they provide depend on chosen data. The number of filters used to describe the frames and number of compressed coefficients strongly affects the performance of the result. Too many features may introduce noise and redundancy, while too few may lead to information loss. The experiments conducted on a common dataset aim to identify the most effective approach for extracting the MFCC features and developing simple classification models with the best performance.
-
-\section{Methodology}
-
-This section outlines the approach used to compare different configurations of MFCC in audio feature extraction and the development of machine learning models for identifying bird species.
-
-\subsection{Audio Feature Extraction}
-
-Audio feature extraction enables the transformation of birdsong recordings into numerical representations, which are crucial for training machine learning models. A custom library called \textit{SoundFeatures} was developed to implement the full extraction pipeline. This section describes its structure and role within the experimental setup.
-\\
-Audio files were converted from MP3 to FLAC format to provide a consistent and lossless compression of the signal. Although this conversion does not restore the data lost during MP3 compression, it eliminates decoding artifacts and ensures stable input for further signal processing \cite{shi2024data}.
-
-\begin{figure}[h]
-  \includegraphics[width=1\linewidth]{img/Audio_feature_extraction_flowchart.png}
-  \label{afeflowchart}
-  \caption{Audio feature extraction process flowchart}
-\end{figure}
-
-\noindent
-The audio feature extraction process consists of the following steps (\ref{afeflowchart}):
-\begin{enumerate}[nosep]
-  \item \textbf{Framing} - Segmenting the signal into short, overlapping frames.
-  \item \textbf{Windowing} - Applying a window function to each frame to minimize spectral leakage at the boundaries. The experiments consisted of Hamming window function.
-    \end{enumerate}
-    \vspace{10pt}
-    \[
-      w_{\text{Hamming}}[k]=0.54 - 0.46\cos{\left (\frac{2\pi k}{N-1}\right )}
-    \]
-    \begin{enumerate}[nosep]
-  \setcounter{enumi}{2}
-  \item \textbf{Fast Fourier Transform (FFT)} - Mapping a time-domain signal into its frequency-domain representation. 
-  \[
-	A_k=\sum\limits_{p=0}^{n-1}a_pe^{-\dfrac{i2\pi kp}{n}}
-  \vspace{-10pt}
-    \]
-    \vspace{-4pt}
-    where:
-    \vspace{-3pt}
-    \begin{itemize}
-      \item $i$ - imaginary unit
-      \item $k$ - frequency bin index
-      \item $n$ - sample count in frame $a$ (frame length)
-      \item $p$ - sample index in the time domain
-      \item $a_p$ - sample at index $p$ in frame $a$
-    \end{itemize}
-  \item \textbf{Power Spectrum} - Computing the energy distribution representation.
-  \[
-  \tilde{P}_k = \frac{|A_k|^2}{N}
-  \]
-  where:
-    \begin{itemize}
-        \item $A_k$ - output of the DFT at frequency bin $k$
-        \item $k$ - frequency bin index
-        \item $N$ - frame length
-        \item $\tilde{P}_k$ - Normalized power spectrum
-    \end{itemize}
-  \item \textbf{Mel Filterbank Processing} - Constructing a set of triangular filters using Mel scale. This process consists of transferring a vector containing equally distributed Mel-frequency values in the range from $Mel(f_{min})$ to $Mel(f_{max})$ back to Herzian scale to develop the filterbank.
-  \[
-    Mel(f)=2595\log_{10}\left (1 + \frac{f}{700} \right ) \Rightarrow f=700\cdot10^{\frac{Mel(f)}{2595}-1}
-  \]
-    where:
-    \begin{itemize}
-      \item $f$ - frequency in Hz
-      \item $Mel(f)$ - frequency in the Mel scale
-    \end{itemize}
-    
-    \[
-    	H_m(k)=
-    	\begin{cases}
-    		0, & k < f_{m-1} \lor k > f_{m+1}\\
-    		\dfrac{k-f_{m-1}}{f_{m}-f_{m-1}}, & f_{m-1} \le k \le f_{m}\\
-    		\dfrac{f_{m+1}-k}{f_{m+1}-f_{m}}, & f_{m} \le k \le f_{m+1}
-    	\end{cases}
-	\]
-	where:
-	\begin{itemize}
-		\item $m$ - filter number
-		\item $k$ - index of sample frequency
-		\item $f$ - vector of filters in Herzian scale
-        \item $H$ - Mel filterbank
-	\end{itemize}
-  \item \textbf{Log Energy Calculation} - Mapping the linear frequency spectrum to Mel scale using Mel filterbank.
-  \[
-    S_m^{log}=\log_{10}\left (\sum\limits_k P_k\cdot H_m(k)\right )
-  \]
-  \item \textbf{Discrete Cosine Transform (DCT)} - Decorrelating the log energies to get Mel-Frequency Cepstral Coefficients
-  \[
-	c_m=\sum\limits^{k-1}_{p=0}S_m^{log}\cdot \cos{\left (\dfrac{\pi m(p+0.5)}{k}\right )}
-	\]
-	where:
-	\begin{itemize}
-		\item m - Mel coefficient index
-		\item k - Chosen count of Mel coefficients
-        \item c - Mel coefficient vector
-	\end{itemize}
-\end{enumerate}
-
-\subsection{Machine Learning Algorithms}
-
-\subsubsection{Random Forest}
-
-The Random Forest algorithm was chosen for classification purposes, a well-known ensemble learning method originally introduced by Leo Breiman \cite{breiman2001random}. Essentially, instead of relying on just one model, it constructs a whole bunch of individual decision trees during the training phase and aggregates their predictions to get the final output. Since we are dealing with classification, the model determines the final predicted class by running a majority vote across all the trees in the forest:
-
-\begin{equation}
-	\hat{y} = \arg\max_{c} \sum_{t=1}^{T} \mathbf{1}\left[h_t(\mathbf{x}) = c\right]
-\end{equation}
-
-\noindent In this equation, $T$ stands for the total number of trees, $h_{t}(x)$ is the prediction made by the $t$-th tree for our input $x$, and $c$ represents the possible classes we are trying to predict.\\
-
-\noindent To make the ensemble robust and prevent the trees from being too similar, each tree is trained on what is called a "bootstrap sample"—basically, a random subset of our training data selected with replacement. On top of that, when splitting a node, the algorithm doesn't look at all available features at once. Instead, it only considers a random subset of $m$ features out of the total $p$ features. This clever trick decorrelates the individual trees, which drastically cuts down the overall variance of the model \cite{breiman2001random}.\\
-
-\noindent To pick the best possible split at any given node, the algorithm evaluates how "pure" the resulting splits will be by minimizing the Gini impurity:
-
-\begin{equation}
-	G(S) = 1 - \sum_{c=1}^{C} p_c^2
-\end{equation}
-
-\noindent Here, $S$ is the set of samples currently at the node, $C$ represents the number of classes, and $p_{c}$ is the proportion of samples belonging to class $c$. The actual split into left ($S_{L}$) and right ($S_{R}$) subsets is chosen to maximize the information gain ($\Delta G$):
-
-\begin{equation}
-	\Delta G = G(S) - \frac{|S_L|}{|S|} G(S_L) - \frac{|S_R|}{|S|} G(S_R)
-\end{equation}
-
-\noindent One of the biggest practical advantages of using Random Forests is something called the out-of-bag (OOB) error estimate. Because of how the bootstrap sampling works, roughly 36.8\% of the training data is left out of any single tree's training process on average. We can actually use these left-out samples as an internal validation set. This has a couple of advantages an unbiased estimate of how well our model generalizes without needing to sacrifice data for a separate validation split \cite{breiman2001random}:
-
-\begin{equation}
-	\text{OOB Error} = \frac{1}{N} \sum_{i=1}^{N} \mathbf{1}\left[\hat{y}_i^{\text{OOB}} \neq y_i\right]
-\end{equation}
-
-\noindent In this formula, $\hat{y}_{i}^{OOB}$ is the majority vote prediction for sample $i$ using only the specific trees that did not see this sample during their training, and $N$ is the total number of training samples.\\
-
-\noindent When it comes to classifying bird species from MFCC data, Random Forest gives us a couple of great advantages: its built-in feature importance scores make it easy to identify which spectral coefficients actually matter, and its ensemble structure keeps it from getting easily thrown off by noisy or irrelevant audio features \cite{huang2024recognition, ahmed2023bird}.
-
-\subsubsection{Neural Network}
-
-\noindent The second classification model used in this study was a neural network. The concept of artificial neural networks dates back to the work of McCulloch and Pitts, who proposed an early mathematical model of a neuron in 1943 \cite{mcculloch1943logical}. The model used in this work belongs to the class of feedforward neural networks, also known as multilayer perceptrons. Such models are composed of interconnected computational units called neurons, organized into an input layer, one or more hidden layers, and an output layer \cite{goodfellow2016deep}. The input layer receives the MFCC feature vector, hidden layers transform it into internal representations, and the output layer produces the final class prediction.
-
-\noindent Each layer applies a linear transformation followed by a non-linear activation function:
-
-\begin{equation}
-    z = XW + b
-\end{equation}
-
-\begin{equation}
-    a = f(z)
-\end{equation}
-
-\noindent where \(X\) is the input matrix, \(W\) is the weight matrix, \(b\) is the bias vector, \(f\) is the activation function, \(z\) is the linear output of the layer, and \(a\) is the activated output. The weights determine the strength of connections between neurons, while the bias terms allow the activation to be shifted independently of the input values.
-
-\noindent The activation function introduces non-linearity into the network. Without a non-linear activation function, a sequence of dense layers would be equivalent to a single linear transformation, limiting the model's ability to learn complex relationships among MFCC features. In the hidden layers, ReLU or Leaky ReLU activation functions were used. ReLU is defined as:
-
-\begin{equation}
-    f_{\text{ReLU}}(z) = \max(0, z)
-\end{equation}
-
-\noindent This function passes positive values unchanged and sets negative values to zero. Leaky ReLU is a modified version of ReLU:
-
-\begin{equation}
-    f_{\text{LeakyReLU}}(z) =
-    \begin{cases}
-        z, & z > 0 \\
-        \alpha z, & z \leq 0
-    \end{cases}
-\end{equation}
-
-\noindent where \(\alpha\) is a small positive coefficient, equal to 0.01 in the implemented model. Unlike standard ReLU, Leaky ReLU keeps a small slope for negative values, which helps preserve gradient flow during training \cite{goodfellow2016deep}.
-
-\noindent For a multi-class classification problem, the output layer was configured to contain one neuron for each bird species. The softmax function was used to transform the raw output values into probabilities:
-
-\begin{equation}
-    \hat{y}_c = \frac{e^{z_c}}{\sum_{j=1}^{C} e^{z_j}}
-\end{equation}
-
-\noindent where \(C\) is the number of classes, \(z_c\) is the output value for class \(c\), and \(\hat{y}_c\) is the predicted probability of this class. The predicted class is selected as the class with the highest probability:
-
-\begin{equation}
-    \hat{y} = \arg\max_c \hat{y}_c
-\end{equation}
-
-\noindent The model was trained by minimizing the categorical cross-entropy loss function:
-
-\begin{equation}
-    L = -\frac{1}{N}\sum_{i=1}^{N}\sum_{c=1}^{C} y_{i,c}\log(\hat{y}_{i,c})
-\end{equation}
-
-\noindent where \(N\) is the number of samples, \(C\) is the number of classes, \(y_{i,c}\) is the true label in one-hot representation, and \(\hat{y}_{i,c}\) is the predicted probability for class \(c\). This loss function is suitable for multi-class classification because it penalizes confident incorrect predictions.
-
-\noindent During training, the error gradient was propagated backwards through the network using backpropagation. This procedure computes how much each parameter contributes to the final error and updates the weights in order to reduce the loss. The implemented network supports both stochastic gradient descent and the Adam optimizer. In the experiments, Adam was used to update the model parameters, because it adapts the learning rate separately for each parameter using estimates of the first and second moments of the gradients \cite{kingma2015adam}.
-
-\noindent The training process was performed using mini-batches. For each batch, the network computed predictions, evaluated the cross-entropy loss, propagated the gradient backwards and updated the model parameters. During training, both loss and accuracy were monitored for the training and validation sets.
-
-\noindent To reduce the risk of overfitting, dropout was applied in the hidden layer. Dropout is a regularization technique in which randomly selected neuron activations are temporarily set to zero during training. As a result, the network cannot rely too strongly on individual neurons and is forced to learn more robust feature representations \cite{srivastava2014dropout}. In the implemented model, dropout was applied only during training and was not used in the output softmax layer. The remaining activations were scaled to preserve the expected signal magnitude.
-
-\newpage
-
-\section{Experiments}
-\hl{brakuje opisu zbioru danych, podzialu danych, jak również informacji o wykorzystanym sprzecie do obliczeń}
-
-\subsection{Audio Feature Extraction}
-
-To analyse the MFCC efficiency based on the number of Mel filters and extracted features the experiments were conducted on dataset which was reduced to 1148 records. Both the Random Forest and the Neural Network were applied to check the F1 score for every configuration.
-\vspace{-5pt}
-\begin{figure}[htbp]
-  \centering
-  \begin{subfigure}{0.4665\linewidth}
-    \centering
-    \includegraphics[width=\linewidth]{img/rf_results_if0.png}
-    \caption{Dataset with every coefficient}
-  \end{subfigure}
-  \begin{subfigure}{0.524\linewidth}
-    \centering
-    \includegraphics[width=\linewidth]{img/rf_results_if1.png}
-    \caption{Dataset without first coefficient}
-  \end{subfigure}
-  \caption{Random Forest F1 Score heatmaps for datasets with and without first coefficient}
-  \label{rfhm}
-\end{figure}
-
-\vspace{-27pt}
-\begin{center}
-\rule{0.9\linewidth}{1pt}
-\end{center}
-\vspace{-20pt}
-
-\begin{figure}[htbp]
-  \centering
-  \begin{subfigure}[b]{0.4665\linewidth}
-    \centering
-    \includegraphics[width=\linewidth]{img/nn_results_if0.png}
-    \caption{Dataset with every coefficient}
-  \end{subfigure}
-  \begin{subfigure}[b]{0.524\linewidth}
-    \centering
-    \includegraphics[width=\linewidth]{img/nn_results_if1.png}
-    \caption{Dataset without first coefficient}
-  \end{subfigure}
-  \caption{Neural Network F1 Score heatmaps for datasets with and without first coefficient}
-  \label{nnhm}
-\end{figure}
-
-\vspace{-30pt}
-\begin{center}
-\rule{0.9\linewidth}{1pt}
-\end{center}
-\vspace{-20pt}
-
-\begin{figure}[htbp]
-  \centering
-  \caption{Best results}
-  \begin{tabular}{|c|c|c|c|c|}
-    \hline
-    Algorithm & N Coefficients & N Filters & First Coefficient Ignored & F1 Score \\\hline
-    Random Forest & 24 & 178 & No & 0.6669 \\\hline
-    Random Forest & 28 & 198 & Yes & 0.6618 \\\hline
-    Neural Network & 48 & 150 & No & 0.8472 \\\hline
-    Neural Network & 49 & 156 & Yes & 0.8454 \\\hline
-  \end{tabular}
-  \label{br}
-\end{figure}
-\vspace{20pt}
-\noindent
-While standard speech recognition systems typically employ 13 Mel coefficients and between 26 and 40 Mel filters\cite{joshi2014matlab,mahmood2021speech,al2023mel}, our results demonstrate that bird species identification requires a higher spectral resolution. The optimal configuration for the Neural Network was observed in the range of 45-49 Mel coefficients with at least 58 Mel filters (\ref{nnhm}), whereas the Random Forest achieved its best performance with 21-25 Mel coefficients and at least 146 Mel filters (\ref{rfhm}). These results emphasize the fact that birdsong contains faster frequency modulations and more complex harmonic structures compared to human speech, requiring a denser filterbank to effectively capture significant parts of the sound, which is essential for accurate species discrimination. Both machine learning algorithms achieved higher results analysing every coefficient, including the first one, which represents the volume. The first coefficient often reaches massive values, dominating other coefficients and making machine learning performance dependent on the distance of microphone. However, experiments have shown, that including this coefficient in examined dataset actually improves the efficiency (\ref{br}).
-\\
-The difference in the optimal spectral resolutions between the two models highlights the higher sensitivity of the Random Forest to excessive feature counts, which can degrade its performance. In contrast, the Neural Network effectively manages high-dimensional inputs, achieving better performance by capturing more complex patterns within the given data.
-\subsection{Random Forest}
-
-\begin{figure}[htbp]
-	\centering
-	\caption{Comparison of Random Forest variants with 100 trees}
-	\begin{tabular}{|c|c|c|c|c|c|c|}
-		\hline
-		Variant & Accuracy & Precision & Recall & Specificity & F1 Score & Error \\\hline
-		RF(gini, sqrt) & 0.2766 & 0.2749 & 0.2767 & 0.9919 & 0.2614 & 0.7234 \\\hline
-		RF(gini, log2) & 0.2714 & 0.2753 & 0.2722 & 0.9918 & 0.2566 & 0.7286 \\\hline
-		RF(gini, 2) & 0.2429 & 0.2400 & 0.2426 & 0.9915 & 0.2243 & 0.7571 \\\hline
-		RF(entropy, sqrt) & 0.2435 & 0.2393 & 0.2418 & 0.9915 & 0.2266 & 0.7565 \\\hline
-		RF(entropy, log2) & 0.2481 & 0.2469 & 0.2432 & 0.9916 & 0.2306 & 0.7519 \\\hline
-		RF(entropy, 2) & 0.2254 & 0.2250 & 0.2233 & 0.9913 & 0.2101 & 0.7746 \\\hline
-	\end{tabular}
-	\label{rfc}
-\end{figure}
-
-\noindent To select the best model, the algorithms were trained on various parameters. The most important were the criteria (gini, entropy) and max\_features (sqrt, log2, constant). Due to the high power costs and time-consuming nature of Random Forest implementation, the number of trees was set to 100, and the constant for max\_features was set to 2 (\ref{rfc}). \\
-
-\begin{figure}[htbp]
-	\centering
-	\caption{Comparison of the number of trees in a forest}
-	\begin{tabular}{|c|c|c|c|c|c|c|}
-		\hline
-		Number of trees & Accuracy & Precision & Recall & Specificity & F1 Score & Error \\\hline
-		100 & 0.2766 & 0.2749 & 0.2767 & 0.9919 & 0.2614 & 0.7234 \\\hline
-		200 & 0.2927 & 0.2960 & 0.2907 & 0.9921 & 0.2746 & 0.7073 \\\hline
-		300 & 0.3070 & 0.3120 & 0.3100 & 0.9922 & 0.2894 & 0.6930 \\\hline
-		400 & 0.3180 & 0.3267 & 0.3198 & 0.9923 & 0.3011 & 0.6820 \\\hline
-		500 & 0.3161 & 0.3227 & 0.3169 & 0.9923 & 0.2672 & 0.6839 \\\hline
-		450 & 0.3161 & 0.3224 & 0.3180 & 0.9923 & 0.2986 & 0.6839 \\\hline
-		425 & 0.3187 & 0.3294 & 0.3205 & 0.9923 & 0.3018 & 0.6813 \\\hline
-		437 & 0.3187 & 0.3272 & 0.3203 & 0.9923 & 0.3013 & 0.6813 \\\hline
-		443 & 0.3180 & 0.3236 & 0.3195 & 0.9923 & 0.2998 & 0.6820 \\\hline
-		440 & 0.3199 & 0.3260 & 0.3218 & 0.9924 & 0.3022 & 0.6801 \\\hline
-		441 & 0.3180 & 0.3236 & 0.3198 & 0.9923 & 0.2999 & 0.6820 \\\hline
-	\end{tabular}
-	\label{rft}
-\end{figure}
-
-\noindent Once the best model was found, a search began for the largest number of trees in the forest to improve the algorithm's accuracy. The number of trees was checked successively for 100, 200, 300, 400, and 500 trees (\ref{rft}). The two models with the highest accuracies were then taken, their tree counts were added, their tree counts were divided by two, and the integer part was taken. The process was repeated until the appropriate number of trees for the highest accuracy was found. If the same result was found for both tree counts, the number of trees that was closer to the number of trees in the second component with the second highest number of trees was used.
-
-\subsection{Neural Network}
-
-\hl{proszę dodać ajką analizę innych metryk typu accuracy, error, analizę sieci neuronowej - ile warstw, dlaczego, co jesli sie zmniejszy ta ilosc itd.}
-
-
-\section{Conclusion}
-\hl{do uzupelnienia}
-
-\bibliography{bibliography}
-
+	
+	\copyrightyear{2026}
+	\copyrightclause{Copyright for this paper by its authors.
+		Use permitted under Creative Commons License Attribution 4.0
+		International (CC BY 4.0).}
+	
+	\conference{SSI, project 2025/2026}
+	
+	\title{A Comparative Study of Audio Feature Extraction and Machine Learning Methods for Bird Species Classification}
+	
+	\tnotemark[1]
+	
+	\author[1]{Kryspin Dziarek}[%
+	email=kd315963@student.polsl.pl
+	]
+	\author[1]{Szymon Pająk}[%
+	email=sp315960@student.polsl.pl
+	]
+	\author[1]{Marcin Adamski}[%
+	email=ma315929@student.polsl.pl
+	]
+	\address[1]{Faculty of Applied Mathematics, Silesian University of Technology, Kaszubska 23, 44100 Gliwice, POLAND}
+	
+	\begin{abstract}\hl{do uzupelnienia}
+		\hl{do uzupelnienia}
+		
+		wstep : 1 akapit o tym co zrobiono, jakie wyniki, minimum 180 słów
+	\end{abstract}
+	
+	\begin{keywords}
+		Sound analysis\sep Birdsong\sep MFCC (Mel-Frequency Cepstral Coefficients)\sep Random forest\sep Neural network 
+	\end{keywords}
+	
+	\maketitle
+	
+	\section{Introduction}
+	Audio analysis is a process of examining and measuring sound signals to gain information. It has been a subject of research for many decades \cite{hollabaugh1963methods}, and now, in the age of artificial intelligence, it has many more applications. It allows the interaction between humans and machines through sound, making advanced audio-based systems possible. Such systems include voice assistants, audio user interfaces (AUI) and voice verification. Machine learning has become an essential tool in audio signal processing, enabling the development of systems capable of analyzing and classifying sounds. Such systems are widely used in applications including speech and vision recognition \cite{zhu2025systematic}, music \cite{serrano2022new,wozniak2017voice} and animal identification \cite{wood2023pairing,zerdzinski2024fantastic}, often outperforming human perception of acoustic patterns \cite{spille2018comparing}.
+	
+	
+	
+	There are many techniques for feature extraction from sound, one of the most commonly used being Mel-Frequency Cepstral Coefficients (MFCC). This method converts the raw audio signal into a set of coefficients that represent the spectral characteristics of the sound\cite{abdul2022mel}. Previous studies have established standard configurations for this algorithm, such as the number of Mel filters and cepstral coefficients. However, optimal values depend on specific datasets and applications, such as detection of breathing phase \cite{zhantleuova2025optimizing} or respiratory diseases \cite{yan2025optimizing}.
+	
+	
+	
+	In addition to sound recognition, various machine learning algorithms have been applied to audio classification tasks, each providing different levels of performance. Simpler algorithms, such as k-nearest neighbors and random forests, are faster but often less accurate, whereas more complex models, such as neural networks, achieve higher accuracy but incur greater computational cost.
+	
+	
+	This paper presents bird species recognition with sound analysis (using MFCC) and compares different approaches for this system. The sound analysis algorithm consists of many stages, two of which are especially important, because the values they provide depend on chosen data. The number of filters used to describe the frames and number of compressed coefficients strongly affect the performance of the result. Too many features may introduce noise and redundancy, while too few may lead to information loss. The experiments conducted on a common dataset aim to identify the most effective approach for extracting the MFCC features and developing simple classification models with the best performance.
+	
+	\section{Methodology}
+	
+	This section outlines the approach used to compare different configurations of MFCC in audio feature extraction and the development of machine learning models for identifying bird species.
+	
+	\subsection{Audio Feature Extraction}
+	
+	Audio feature extraction enables the transformation of birdsong recordings into numerical representations, which are crucial for training machine learning models. A custom library called \textit{SoundFeatures} was developed to implement the full extraction pipeline. This section describes its structure and role within the experimental setup.
+	
+	
+	
+	Audio files were converted from MP3 to FLAC format to provide a consistent and lossless compression of the signal. Although this conversion does not restore the data lost during MP3 compression, it eliminates decoding artifacts and ensures stable input for further signal processing \cite{shi2024data}.
+	
+	\begin{figure}[h]
+		\includegraphics[width=1\linewidth]{img/Audio_feature_extraction_flowchart.png}
+		\caption{Audio feature extraction process flowchart}
+		\label{afeflowchart}
+	\end{figure}
+	
+	\noindent
+	The audio feature extraction process consists of the following steps in Fig. (\ref{afeflowchart}):
+	\begin{enumerate}[nosep]
+		\item \textbf{Framing} - Segmenting the signal into short, overlapping frames.
+		\item \textbf{Windowing} - Applying a window function to each frame to minimize spectral leakage at the boundaries. The experiments consisted of Hamming window function.
+	\end{enumerate}
+	\vspace{10pt}
+	\begin{equation}      w_{\text{Hamming}}[k]=0.54 - 0.46\cos{\left (\frac{2\pi k}{N-1}\right )}
+	\end{equation}
+	\begin{enumerate}[nosep]
+		\setcounter{enumi}{2}
+		\item \textbf{Fast Fourier Transform (FFT)} - Mapping a time-domain signal into its frequency-domain representation. 
+		\begin{equation}
+			A_k=\sum\limits_{p=0}^{n-1}a_pe^{-\dfrac{i2\pi kp}{n}}
+			\vspace{-10pt}
+		\end{equation}
+		where: $i$ - imaginary unit, $k$ - frequency bin index, $n$ - sample count in frame $a$ (frame length), $p$ - sample index in the time domain, $a_p$ - sample at index $p$ in frame $a$, 
+		\item \textbf{Power Spectrum} - Computing the energy distribution representation.
+		
+		\begin{equation}
+			\tilde{P}_k = \frac{|A_k|^2}{N}
+		\end{equation}
+		where: $A_k$ - output of the DFT at frequency bin $k$, $k$ - frequency bin index, $N$ - frame length, $\tilde{P}_k$ - Normalized power spectrum
+		\item \textbf{Mel Filterbank Processing} - Constructing a set of triangular filters using Mel scale. This process consists of transferring a vector containing equally distributed Mel-frequency values in the range from $Mel(f_{min})$ to $Mel(f_{max})$ back to Herzian scale to develop the filterbank.
+		\begin{equation}
+			Mel(f)=2595\log_{10}\left (1 + \frac{f}{700} \right ) \Rightarrow f=700\cdot10^{\frac{Mel(f)}{2595}-1}
+		\end{equation}
+		where: $f$ - frequency in Hz, $Mel(f)$ - frequency in the Mel scale
+		
+		\begin{equation}
+			H_m(k)=
+			\begin{cases}
+				0, & k < f_{m-1} \lor k > f_{m+1}\\
+				\dfrac{k-f_{m-1}}{f_{m}-f_{m-1}}, & f_{m-1} \le k \le f_{m}\\
+				\dfrac{f_{m+1}-k}{f_{m+1}-f_{m}}, & f_{m} \le k \le f_{m+1}
+			\end{cases}
+		\end{equation}
+		where $m$ - filter number, $k$ - index of sample frequency, $f$ - vector of filters in Herzian scale, $H$ - Mel filterbank.
+		\item \textbf{Log Energy Calculation} - Mapping the linear frequency spectrum to Mel scale using Mel filterbank.
+		\begin{equation}
+			S_m^{log}=\log_{10}\left (\sum\limits_k P_k\cdot H_m(k)\right )
+		\end{equation}
+		\item \textbf{Discrete Cosine Transform (DCT)} - Decorrelating the log energies to get Mel-Frequency Cepstral Coefficients
+		\begin{equation}
+			c_m=\sum\limits^{k-1}_{p=0}S_m^{log}\cdot \cos{\left (\dfrac{\pi m(p+0.5)}{k}\right )}
+		\end{equation}
+		where: $m$ - Mel coefficient index,  $k$ - Chosen count of Mel coefficients, $c $ - Mel coefficient vector.
+	\end{enumerate}
+	
+	\subsection{Machine Learning Algorithms}
+	\subsubsection{Random Forest}
+	
+	The Random Forest algorithm was chosen for classification purposes, a well-known ensemble learning method originally introduced by Leo Breiman \cite{breiman2001random}. Essentially, instead of relying on just one model, it constructs a whole bunch of individual decision trees during the training phase and aggregates their predictions to get the final output. Since we are dealing with classification, the model determines the final predicted class by running a majority vote across all the trees in the forest:
+	
+	\begin{equation}
+		\hat{y} = \arg\max_{c} \sum_{t=1}^{T} \mathbf{1}\left[h_t(\mathbf{x}) = c\right]
+	\end{equation}
+	
+	In this equation, $T$ stands for the total number of trees, $h_{t}(x)$ is the prediction made by the $t$-th tree for our input $x$, and $c$ represents the possible classes we are trying to predict.
+	
+	
+	To make the ensemble robust and prevent the trees from being too similar, each tree is trained on what is called a "bootstrap sample"—basically, a random subset of our training data selected with replacement. On top of that, when splitting a node, the algorithm doesn't look at all available features at once. Instead, it only considers a random subset of $m$ features out of the total $p$ features. This clever trick decorrelates the individual trees, which drastically cuts down the overall variance of the model \cite{breiman2001random}.
+	
+	
+	To pick the best possible split at any given node, the algorithm evaluates how "pure" the resulting splits will be by minimizing the Gini impurity:
+	
+	\begin{equation}
+		G(S) = 1 - \sum_{c=1}^{C} p_c^2
+	\end{equation}
+	
+	
+	Here, $S$ is the set of samples currently at the node, $C$ represents the number of classes, and $p_{c}$ is the proportion of samples belonging to class $c$. The actual split into left ($S_{L}$) and right ($S_{R}$) subsets is chosen to maximize the information gain ($\Delta G$):
+	
+	\begin{equation}
+		\Delta G = G(S) - \frac{|S_L|}{|S|} G(S_L) - \frac{|S_R|}{|S|} G(S_R)
+	\end{equation}
+	
+	
+	One of the biggest practical advantages of using Random Forests is something called the out-of-bag (OOB) error estimate. Because of how the bootstrap sampling works, roughly 36.8\% of the training data is left out of any single tree's training process on average. We can actually use these left-out samples as an internal validation set. This has a couple of advantages an unbiased estimate of how well our model generalizes without needing to sacrifice data for a separate validation split \cite{breiman2001random}:
+	
+	\begin{equation}
+		\text{OOB Error} = \frac{1}{N} \sum_{i=1}^{N} \mathbf{1}\left[\hat{y}_i^{\text{OOB}} \neq y_i\right]
+	\end{equation}
+	
+	In this formula, $\hat{y}_{i}^{OOB}$ is the majority vote prediction for sample $i$ using only the specific trees that did not see this sample during their training, and $N$ is the total number of training samples.
+	
+	
+	When it comes to classifying bird species from MFCC data, Random Forest gives us a couple of great advantages: its built-in feature importance scores make it easy to identify which spectral coefficients actually matter, and its ensemble structure keeps it from getting easily thrown off by noisy or irrelevant audio features \cite{huang2024recognition, ahmed2023bird}.
+	
+	\subsubsection{Neural Network}
+	
+	\noindent The second classification model used in this study was a neural network. The concept of artificial neural networks dates back to the work of McCulloch and Pitts, who proposed an early mathematical model of a neuron in 1943 \cite{mcculloch1943logical}. The model used in this work belongs to the class of feedforward neural networks, also known as multilayer perceptrons. Such models are composed of interconnected computational units called neurons, organized into an input layer, one or more hidden layers, and an output layer \cite{goodfellow2016deep}. The input layer receives the MFCC feature vector, hidden layers transform it into internal representations, and the output layer produces the final class prediction.
+	
+	\noindent Each layer applies a linear transformation followed by a non-linear activation function:
+	
+	\begin{equation}
+		z = XW + b
+	\end{equation}
+	
+	\begin{equation}
+		a = f(z)
+	\end{equation}
+	
+	\noindent where \(X\) is the input matrix, \(W\) is the weight matrix, \(b\) is the bias vector, \(f\) is the activation function, \(z\) is the linear output of the layer, and \(a\) is the activated output. The weights determine the strength of connections between neurons, while the bias terms allow the activation to be shifted independently of the input values.
+	
+	\noindent The activation function introduces non-linearity into the network. Without a non-linear activation function, a sequence of dense layers would be equivalent to a single linear transformation, limiting the model's ability to learn complex relationships among MFCC features. In the hidden layers, ReLU or Leaky ReLU activation functions were used. ReLU is defined as:
+	
+	\begin{equation}
+		f_{\text{ReLU}}(z) = \max(0, z)
+	\end{equation}
+	
+	\noindent This function passes positive values unchanged and sets negative values to zero. Leaky ReLU is a modified version of ReLU:
+	
+	\begin{equation}
+		f_{\text{LeakyReLU}}(z) =
+		\begin{cases}
+			z, & z > 0 \\
+			\alpha z, & z \leq 0
+		\end{cases}
+	\end{equation}
+	
+	\noindent where \(\alpha\) is a small positive coefficient, equal to 0.01 in the implemented model. Unlike standard ReLU, Leaky ReLU keeps a small slope for negative values, which helps preserve gradient flow during training \cite{goodfellow2016deep}.
+	
+	\noindent For a multi-class classification problem, the output layer was configured to contain one neuron for each bird species. The softmax function was used to transform the raw output values into probabilities:
+	
+	\begin{equation}
+		\hat{y}_c = \frac{e^{z_c}}{\sum_{j=1}^{C} e^{z_j}}
+	\end{equation}
+	
+	\noindent where \(C\) is the number of classes, \(z_c\) is the output value for class \(c\), and \(\hat{y}_c\) is the predicted probability of this class. The predicted class is selected as the class with the highest probability:
+	
+	\begin{equation}
+		\hat{y} = \arg\max_c \hat{y}_c
+	\end{equation}
+	
+	\noindent The model was trained by minimizing the categorical cross-entropy loss function:
+	
+	\begin{equation}
+		L = -\frac{1}{N}\sum_{i=1}^{N}\sum_{c=1}^{C} y_{i,c}\log(\hat{y}_{i,c})
+	\end{equation}
+	
+	\noindent where \(N\) is the number of samples, \(C\) is the number of classes, \(y_{i,c}\) is the true label in one-hot representation, and \(\hat{y}_{i,c}\) is the predicted probability for class \(c\). This loss function is suitable for multi-class classification because it penalizes confident incorrect predictions.
+	
+	\noindent During training, the error gradient was propagated backwards through the network using backpropagation. This procedure computes how much each parameter contributes to the final error and updates the weights in order to reduce the loss. The implemented network supports both stochastic gradient descent and the Adam optimizer. In the experiments, Adam was used to update the model parameters, because it adapts the learning rate separately for each parameter using estimates of the first and second moments of the gradients \cite{kingma2015adam}.
+	
+	\noindent The training process was performed using mini-batches. For each batch, the network computed predictions, evaluated the cross-entropy loss, propagated the gradient backwards and updated the model parameters. During training, both loss and accuracy were monitored for the training and validation sets.
+	
+	\noindent To reduce the risk of overfitting, dropout was applied in the hidden layer. Dropout is a regularization technique in which randomly selected neuron activations are temporarily set to zero during training. As a result, the network cannot rely too strongly on individual neurons and is forced to learn more robust feature representations \cite{srivastava2014dropout}. In the implemented model, dropout was applied only during training and was not used in the output softmax layer. The remaining activations were scaled to preserve the expected signal magnitude.
+	\newpage
+	
+	\section{Experiments}
+	\hl{brakuje opisu zbioru danych, podzialu danych, jak również informacji o wykorzystanym sprzecie do obliczeń}
+	
+	\subsection{Audio Feature Extraction}
+	
+	To analyse the MFCC efficiency based on the number of Mel filters and extracted features the experiments were conducted on dataset which was reduced to 1148 records. Both the Random Forest and the Neural Network were applied to check the F1 score for every configuration.
+	\begin{figure}[htbp]
+		\centering
+		\begin{subfigure}{0.4665\linewidth}
+			\centering
+			\includegraphics[width=\linewidth]{img/rf_results_if0.png}
+			\caption{Dataset with every coefficient}
+		\end{subfigure}
+		\begin{subfigure}{0.524\linewidth}
+			\centering
+			\includegraphics[width=\linewidth]{img/rf_results_if1.png}
+			\caption{Dataset without first coefficient}
+		\end{subfigure}
+		\caption{Random Forest F1 Score heatmaps for datasets with and without first coefficient}
+		\label{rfhm}
+	\end{figure}
+	
+	\vspace{-27pt}
+	\begin{center}
+		\rule{0.9\linewidth}{1pt}
+	\end{center}
+	\vspace{-20pt}
+	
+	\begin{figure}[htbp]
+		\centering
+		\begin{subfigure}[b]{0.4665\linewidth}
+			\centering
+			\includegraphics[width=\linewidth]{img/nn_results_if0.png}
+			\caption{Dataset with every coefficient}
+		\end{subfigure}
+		\begin{subfigure}[b]{0.524\linewidth}
+			\centering
+			\includegraphics[width=\linewidth]{img/nn_results_if1.png}
+			\caption{Dataset without first coefficient}
+		\end{subfigure}
+		\caption{Neural Network F1 Score heatmaps for datasets with and without first coefficient}
+		\label{nnhm}
+	\end{figure}
+	
+	
+	\begin{table}
+		\centering
+		\caption{Best results}
+		\begin{tabular}{|c|c|c|c|c|}
+			\hline
+			Algorithm & N Coefficients & N Filters & First Coefficient Ignored & F1 Score \\\hline
+			Random Forest & 24 & 178 & No & 0.6669 \\\hline
+			Random Forest & 28 & 198 & Yes & 0.6618 \\\hline
+			Neural Network & 48 & 150 & No & 0.8472 \\\hline
+			Neural Network & 49 & 156 & Yes & 0.8454 \\\hline
+		\end{tabular}
+		\label{br}
+	\end{table}
+	
+	\noindent
+	While standard speech recognition systems typically employ 13 Mel coefficients and between 26 and 40 Mel filters\cite{joshi2014matlab,mahmood2021speech,al2023mel}, our results demonstrate that bird species identification requires a higher spectral resolution. The optimal configuration for the Neural Network was observed in the range of 45-49 Mel coefficients with at least 58 Mel filters (\ref{nnhm}), whereas the Random Forest achieved its best performance with 21-25 Mel coefficients and at least 146 Mel filters (\ref{rfhm}). These results emphasize the fact that birdsong contains faster frequency modulations and more complex harmonic structures compared to human speech, requiring a denser filterbank to effectively capture significant parts of the sound, which is essential for accurate species discrimination. Both machine learning algorithms achieved higher results analysing every coefficient, including the first one, which represents the volume. The first coefficient often reaches massive values, dominating other coefficients and making machine learning performance dependent on the distance of microphone. However, experiments have shown, that including this coefficient in examined dataset actually improves the efficiency (\ref{br}).
+	
+	
+	The difference in the optimal spectral resolutions between the two models highlights the higher sensitivity of the Random Forest to excessive feature counts, which can degrade its performance. In contrast, the Neural Network effectively manages high-dimensional inputs, achieving better performance by capturing more complex patterns within the given data.
+	\subsection{Random Forest}
+	
+	\begin{table}[htbp]
+		\centering
+		\caption{Comparison of Random Forest variants with 100 trees}
+		\begin{tabular}{|c|c|c|c|c|c|c|}
+			\hline
+			Variant & Accuracy & Precision & Recall & Specificity & F1 Score & Error \\\hline
+			RF(gini, sqrt) & 0.2766 & 0.2749 & 0.2767 & 0.9919 & 0.2614 & 0.7234 \\\hline
+			RF(gini, log2) & 0.2714 & 0.2753 & 0.2722 & 0.9918 & 0.2566 & 0.7286 \\\hline
+			RF(gini, 2) & 0.2429 & 0.2400 & 0.2426 & 0.9915 & 0.2243 & 0.7571 \\\hline
+			RF(entropy, sqrt) & 0.2435 & 0.2393 & 0.2418 & 0.9915 & 0.2266 & 0.7565 \\\hline
+			RF(entropy, log2) & 0.2481 & 0.2469 & 0.2432 & 0.9916 & 0.2306 & 0.7519 \\\hline
+			RF(entropy, 2) & 0.2254 & 0.2250 & 0.2233 & 0.9913 & 0.2101 & 0.7746 \\\hline
+		\end{tabular}
+		\label{rfc}
+	\end{table}
+	
+	\noindent To select the best model, the algorithms were trained on various parameters. The most important were the criteria (gini, entropy) and max\_features (sqrt, log2, constant). Due to the high power costs and time-consuming nature of Random Forest implementation, the number of trees was set to 100, and the constant for max\_features was set to 2 (\ref{rfc}).
+	
+	
+	
+	\begin{table}[htbp]
+		\centering
+		\caption{Comparison of the number of trees in a forest}
+		\begin{tabular}{|c|c|c|c|c|c|c|}
+			\hline
+			Number of trees & Accuracy & Precision & Recall & Specificity & F1 Score & Error \\\hline
+			100 & 0.2766 & 0.2749 & 0.2767 & 0.9919 & 0.2614 & 0.7234 \\\hline
+			200 & 0.2927 & 0.2960 & 0.2907 & 0.9921 & 0.2746 & 0.7073 \\\hline
+			300 & 0.3070 & 0.3120 & 0.3100 & 0.9922 & 0.2894 & 0.6930 \\\hline
+			400 & 0.3180 & 0.3267 & 0.3198 & 0.9923 & 0.3011 & 0.6820 \\\hline
+			500 & 0.3161 & 0.3227 & 0.3169 & 0.9923 & 0.2672 & 0.6839 \\\hline
+			450 & 0.3161 & 0.3224 & 0.3180 & 0.9923 & 0.2986 & 0.6839 \\\hline
+			425 & 0.3187 & 0.3294 & 0.3205 & 0.9923 & 0.3018 & 0.6813 \\\hline
+			437 & 0.3187 & 0.3272 & 0.3203 & 0.9923 & 0.3013 & 0.6813 \\\hline
+			443 & 0.3180 & 0.3236 & 0.3195 & 0.9923 & 0.2998 & 0.6820 \\\hline
+			440 & 0.3199 & 0.3260 & 0.3218 & 0.9924 & 0.3022 & 0.6801 \\\hline
+			441 & 0.3180 & 0.3236 & 0.3198 & 0.9923 & 0.2999 & 0.6820 \\\hline
+		\end{tabular}
+		\label{rft}
+	\end{table}
+	
+	
+	Once the best model was found, a search began for the largest number of trees in the forest to improve the algorithm's accuracy. The number of trees was checked successively for 100, 200, 300, 400, and 500 trees (\ref{rft}). The two models with the highest accuracies were then taken, their tree counts were added, their tree counts were divided by two, and the integer part was taken. The process was repeated until the appropriate number of trees for the highest accuracy was found. If the same result was found for both tree counts, the number of trees that was closer to the number of trees in the second component with the second highest number of trees was used.
+	
+	\subsection{Neural Network}
+	
+	\hl{proszę dodać ajką analizę innych metryk typu accuracy, error, analizę sieci neuronowej - ile warstw, dlaczego, co jesli sie zmniejszy ta ilosc itd.}
+	
+	\section{Conclusion}
+	\hl{do uzupelnienia}
+	
+	\bibliography{bibliography}
+	
 \end{document}
