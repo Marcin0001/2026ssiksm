@@ -243,7 +243,7 @@ onecolumn,
 	\newpage
 	
 	\section{Experiments}
-	\hl{brakuje opisu zbioru danych, podzialu danych, jak również informacji o wykorzystanym sprzecie do obliczeń}
+	A dataset found on \textit{kaggle.com}\cite{kaggle} was used for data analysis. The dataset was created for the \textit{Cornell Birdcall Identification} competition and was created by the Cornell Lab of Ornithology\cite{kaggle}. The dataset contains sound files of bird recordings, sorted into folders according to their species. There are 264 bird species in the dataset, and the dataset itself contains 10 columns: rating, playback\_used, ebird\_code, channels, date, pitch, duration, filename, speed, and species. The following columns were used for sound analysis: species, ebird\_code, filename, and rating. Filename and ebird\_code were used to download sound files, where ebird\_code was the name of the folder containing recordings of a given species. Rating was used to analyze the sound, and species was used in the subsequent stage of model training. The species column was used in the training process itself, and columns were created from the Mel analysis of the sound files. The dataset was split in an 80:20 ratio. Due to the model training time, the training process was performed on a private computer with a GeForce RTX 3050 LP OC 6GB graphics card and an Intel Core i5-8400 2.80GHz processor.
 	
 	\subsection{Audio Feature Extraction}
 	
