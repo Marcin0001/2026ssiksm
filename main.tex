@@ -64,9 +64,7 @@ onecolumn,
 	Audio analysis is a process of examining and measuring sound signals to gain information. It has been a subject of research for many decades \cite{hollabaugh1963methods}, and now, in the age of artificial intelligence, it has many more applications. It allows the interaction between humans and machines through sound, making advanced audio-based systems possible. Such systems include voice assistants, audio user interfaces (AUI) and voice verification. Machine learning has become an essential tool in audio signal processing, enabling the development of systems capable of analyzing and classifying sounds. Such systems are widely used in applications including speech and vision recognition \cite{zhu2025systematic}, music \cite{serrano2022new,wozniak2017voice} and animal identification \cite{wood2023pairing,zerdzinski2024fantastic}, often outperforming human perception of acoustic patterns \cite{spille2018comparing}.
 	
 	
-	
 	There are many techniques for feature extraction from sound, one of the most commonly used being Mel-Frequency Cepstral Coefficients (MFCC). This method converts the raw audio signal into a set of coefficients that represent the spectral characteristics of the sound\cite{abdul2022mel}. Previous studies have established standard configurations for this algorithm, such as the number of Mel filters and cepstral coefficients. However, optimal values depend on specific datasets and applications, such as detection of breathing phase \cite{zhantleuova2025optimizing} or respiratory diseases \cite{yan2025optimizing}.
-	
 	
 	
 	In addition to sound recognition, various machine learning algorithms have been applied to audio classification tasks, each providing different levels of performance. Simpler algorithms, such as k-nearest neighbors and random forests, are faster but often less accurate, whereas more complex models, such as neural networks, achieve higher accuracy but incur greater computational cost.
@@ -83,7 +81,6 @@ onecolumn,
 	Audio feature extraction enables the transformation of birdsong recordings into numerical representations, which are crucial for training machine learning models. A custom library called \textit{SoundFeatures} was developed to implement the full extraction pipeline. This section describes its structure and role within the experimental setup.
 	
 	
-	
 	Audio files were converted from MP3 to FLAC format to provide a consistent and lossless compression of the signal. Although this conversion does not restore the data lost during MP3 compression, it eliminates decoding artifacts and ensures stable input for further signal processing \cite{shi2024data}.
 	
 	\begin{figure}[h]
@@ -92,13 +89,11 @@ onecolumn,
 		\label{afeflowchart}
 	\end{figure}
 	
-	\noindent
 	The audio feature extraction process consists of the following steps in Fig. (\ref{afeflowchart}):
 	\begin{enumerate}[nosep]
 		\item \textbf{Framing} - Segmenting the signal into short, overlapping frames.
 		\item \textbf{Windowing} - Applying a window function to each frame to minimize spectral leakage at the boundaries. The experiments consisted of Hamming window function.
 	\end{enumerate}
-	\vspace{10pt}
 	\begin{equation}      w_{\text{Hamming}}[k]=0.54 - 0.46\cos{\left (\frac{2\pi k}{N-1}\right )}
 	\end{equation}
 	\begin{enumerate}[nosep]
@@ -106,7 +101,6 @@ onecolumn,
 		\item \textbf{Fast Fourier Transform (FFT)} - Mapping a time-domain signal into its frequency-domain representation. 
 		\begin{equation}
 			A_k=\sum\limits_{p=0}^{n-1}a_pe^{-\dfrac{i2\pi kp}{n}}
-			\vspace{-10pt}
 		\end{equation}
 		where: $i$ - imaginary unit, $k$ - frequency bin index, $n$ - sample count in frame $a$ (frame length), $p$ - sample index in the time domain, $a_p$ - sample at index $p$ in frame $a$, 
 		\item \textbf{Power Spectrum} - Computing the energy distribution representation.
@@ -182,10 +176,10 @@ onecolumn,
 	When it comes to classifying bird species from MFCC data, Random Forest gives us a couple of great advantages: its built-in feature importance scores make it easy to identify which spectral coefficients actually matter, and its ensemble structure keeps it from getting easily thrown off by noisy or irrelevant audio features \cite{huang2024recognition, ahmed2023bird}.
 	
 	\subsubsection{Neural Network}
+	The second classification model used in this study was a neural network. The concept of artificial neural networks dates back to the work of McCulloch and Pitts, who proposed an early mathematical model of a neuron in 1943 \cite{mcculloch1943logical}. The model used in this work belongs to the class of feedforward neural networks, also known as multilayer perceptrons. Such models are composed of interconnected computational units called neurons, organized into an input layer, one or more hidden layers, and an output layer \cite{goodfellow2016deep}. In this study, the input layer received the MFCC feature vector, the hidden layers transformed it into internal representations, and the output layer produced the final bird species prediction.
 	
-	\noindent The second classification model used in this study was a neural network. The concept of artificial neural networks dates back to the work of McCulloch and Pitts, who proposed an early mathematical model of a neuron in 1943 \cite{mcculloch1943logical}. The model used in this work belongs to the class of feedforward neural networks, also known as multilayer perceptrons. Such models are composed of interconnected computational units called neurons, organized into an input layer, one or more hidden layers, and an output layer \cite{goodfellow2016deep}. The input layer receives the MFCC feature vector, hidden layers transform it into internal representations, and the output layer produces the final class prediction.
-	
-	\noindent Each layer applies a linear transformation followed by a non-linear activation function:
+
+	Each layer applies a linear transformation followed by a non-linear activation function:
 	
 	\begin{equation}
 		z = XW + b
@@ -195,16 +189,10 @@ onecolumn,
 		a = f(z)
 	\end{equation}
 	
-	\noindent where \(X\) is the input matrix, \(W\) is the weight matrix, \(b\) is the bias vector, \(f\) is the activation function, \(z\) is the linear output of the layer, and \(a\) is the activated output. The weights determine the strength of connections between neurons, while the bias terms allow the activation to be shifted independently of the input values.
+  where \(X\) is the input matrix, \(W\) is the weight matrix, \(b\) is the bias vector, \(f\) is the activation function, \(z\) is the linear output of the layer, and \(a\) is the activated output.
 	
-	\noindent The activation function introduces non-linearity into the network. Without a non-linear activation function, a sequence of dense layers would be equivalent to a single linear transformation, limiting the model's ability to learn complex relationships among MFCC features. In the hidden layers, ReLU or Leaky ReLU activation functions were used. ReLU is defined as:
-	
-	\begin{equation}
-		f_{\text{ReLU}}(z) = \max(0, z)
-	\end{equation}
-	
-	\noindent This function passes positive values unchanged and sets negative values to zero. Leaky ReLU is a modified version of ReLU:
-	
+
+  The activation function introduces non-linearity into the network. Without a non-linear activation function, a sequence of dense layers would be equivalent to a single linear transformation, limiting the model's ability to learn complex relationships among MFCC features. In the initial experiments, ReLU was also considered, but the final neural network configurations used Leaky ReLU in the hidden layers:
 	\begin{equation}
 		f_{\text{LeakyReLU}}(z) =
 		\begin{cases}
@@ -213,37 +201,41 @@ onecolumn,
 		\end{cases}
 	\end{equation}
 	
-	\noindent where \(\alpha\) is a small positive coefficient, equal to 0.01 in the implemented model. Unlike standard ReLU, Leaky ReLU keeps a small slope for negative values, which helps preserve gradient flow during training \cite{goodfellow2016deep}.
+	where \(\alpha\) is a small positive coefficient, equal to 0.01 in the implemented model. Unlike standard ReLU, Leaky ReLU keeps a small slope for negative values, which helps preserve gradient flow during training \cite{goodfellow2016deep}.
 	
-	\noindent For a multi-class classification problem, the output layer was configured to contain one neuron for each bird species. The softmax function was used to transform the raw output values into probabilities:
+
+	For a multi-class classification problem, the output layer was configured to contain one neuron for each bird species. The softmax function was used to transform the raw output values into probabilities:
 	
 	\begin{equation}
 		\hat{y}_c = \frac{e^{z_c}}{\sum_{j=1}^{C} e^{z_j}}
 	\end{equation}
 	
-	\noindent where \(C\) is the number of classes, \(z_c\) is the output value for class \(c\), and \(\hat{y}_c\) is the predicted probability of this class. The predicted class is selected as the class with the highest probability:
+	where \(C\) is the number of classes, \(z_c\) is the output value for class \(c\), and \(\hat{y}_c\) is the predicted probability of this class. The predicted class is selected as the class with the highest probability:
 	
 	\begin{equation}
 		\hat{y} = \arg\max_c \hat{y}_c
 	\end{equation}
 	
-	\noindent The model was trained by minimizing the categorical cross-entropy loss function:
+	The model was trained by minimizing the categorical cross-entropy loss function:
 	
 	\begin{equation}
 		L = -\frac{1}{N}\sum_{i=1}^{N}\sum_{c=1}^{C} y_{i,c}\log(\hat{y}_{i,c})
 	\end{equation}
 	
-	\noindent where \(N\) is the number of samples, \(C\) is the number of classes, \(y_{i,c}\) is the true label in one-hot representation, and \(\hat{y}_{i,c}\) is the predicted probability for class \(c\). This loss function is suitable for multi-class classification because it penalizes confident incorrect predictions.
+	where \(N\) is the number of samples, \(C\) is the number of classes, \(y_{i,c}\) is the true label in one-hot representation, and \(\hat{y}_{i,c}\) is the predicted probability for class \(c\). This loss function is suitable for multi-class classification because it penalizes confident incorrect predictions.
 	
-	\noindent During training, the error gradient was propagated backwards through the network using backpropagation. This procedure computes how much each parameter contributes to the final error and updates the weights in order to reduce the loss. The implemented network supports both stochastic gradient descent and the Adam optimizer. In the experiments, Adam was used to update the model parameters, because it adapts the learning rate separately for each parameter using estimates of the first and second moments of the gradients \cite{kingma2015adam}.
+
+	During training, the error gradient was propagated backwards through the network using backpropagation. This procedure computes gradients of the loss with respect to the model parameters and updates the weights in order to reduce the loss. The implemented network supports both stochastic gradient descent and the Adam optimizer. In the experiments, Adam was used to update the model parameters because it adapts the learning rate separately for each parameter using estimates of the first and second moments of the gradients \cite{kingma2015adam}.
 	
-	\noindent The training process was performed using mini-batches. For each batch, the network computed predictions, evaluated the cross-entropy loss, propagated the gradient backwards and updated the model parameters. During training, both loss and accuracy were monitored for the training and validation sets.
+
+	The training process was performed using mini-batches. For each batch, the network computed predictions, evaluated the cross-entropy loss, propagated the gradient backwards and updated the model parameters. During training, both loss and accuracy were monitored for the training and validation sets.
 	
-	\noindent To reduce the risk of overfitting, dropout was applied in the hidden layer. Dropout is a regularization technique in which randomly selected neuron activations are temporarily set to zero during training. As a result, the network cannot rely too strongly on individual neurons and is forced to learn more robust feature representations \cite{srivastava2014dropout}. In the implemented model, dropout was applied only during training and was not used in the output softmax layer. The remaining activations were scaled to preserve the expected signal magnitude.
+
+	To reduce the risk of overfitting, dropout was applied in the hidden layers. Dropout is a regularization technique in which randomly selected neuron activations are temporarily set to zero during training. As a result, the network cannot rely too strongly on individual neurons and is forced to learn more robust feature representations \cite{srivastava2014dropout}. In the implemented model, dropout was applied only during training and was not used in the output softmax layer. The remaining activations were scaled to preserve the expected signal magnitude.
 	\newpage
 	
 	\section{Experiments}
-	A dataset found on \textit{kaggle.com}\cite{kaggle} was used for data analysis. The dataset was created for the \textit{Cornell Birdcall Identification} competition and was created by the Cornell Lab of Ornithology\cite{kaggle}. The dataset contains sound files of bird recordings, sorted into folders according to their species. There are 264 bird species in the dataset, and the dataset itself contains 10 columns: rating, playback\_used, ebird\_code, channels, date, pitch, duration, filename, speed, and species. The following columns were used for sound analysis: species, ebird\_code, filename, and rating. Filename and ebird\_code were used to download sound files, where ebird\_code was the name of the folder containing recordings of a given species. Rating was used to analyze the sound, and species was used in the subsequent stage of model training. The species column was used in the training process itself, and columns were created from the Mel analysis of the sound files. The dataset was split in an 80:20 ratio. Due to the model training time, the training process was performed on a private computer with a GeForce RTX 3050 LP OC 6GB graphics card and an Intel Core i5-8400 2.80GHz processor.
+	A dataset found on \textit{kaggle.com}\cite{kaggle} was used for data analysis. The dataset was created for the \textit{Cornell Birdcall Identification} competition and was created by the Cornell Lab of Ornithology\cite{kaggle}. The dataset contains sound files of bird recordings, sorted into folders according to their species. There are 264 bird species in the dataset, and the dataset itself contains 10 columns: rating, playback\_used, ebird\_code, channels, date, pitch, duration, filename, speed, and species. The following columns were used for sound analysis: species, ebird\_code, filename, and rating. Filename and ebird\_code were used to download sound files, where ebird\_code was the name of the folder containing recordings of a given species. Rating was used to analyze the sound, and species was used in the subsequent stage of model training. The species column was used in the training process itself, and columns were created from the Mel analysis of the sound files. The dataset was split in an 80:20 ratio for the general model evaluation. However, for the neural network experiments, a separate split was used, because the model required a validation set during training. In this case, the dataset was divided into training, validation, and test sets in a 70:15:15 ratio. The validation set was used to monitor the learning process and apply early stopping, while the test set was used only for the final evaluation. Due to the model training time, the training process was performed on a private computer with a GeForce RTX 3050 LP OC 6GB graphics card and an Intel Core i5-8400 2.80GHz processor.
 	
 	\subsection{Audio Feature Extraction}
 	
@@ -264,12 +256,6 @@ onecolumn,
 		\label{rfhm}
 	\end{figure}
 	
-	\vspace{-27pt}
-	\begin{center}
-		\rule{0.9\linewidth}{1pt}
-	\end{center}
-	\vspace{-20pt}
-	
 	\begin{figure}[htbp]
 		\centering
 		\begin{subfigure}[b]{0.4665\linewidth}
@@ -286,8 +272,7 @@ onecolumn,
 		\label{nnhm}
 	\end{figure}
 	
-	
-	\begin{table}
+	\begin{table}[htbp]
 		\centering
 		\caption{Best results}
 		\begin{tabular}{|c|c|c|c|c|}
@@ -301,14 +286,15 @@ onecolumn,
 		\label{br}
 	\end{table}
 	
-	\noindent
+	
 	While standard speech recognition systems typically employ 13 Mel coefficients and between 26 and 40 Mel filters\cite{joshi2014matlab,mahmood2021speech,al2023mel}, our results demonstrate that bird species identification requires a higher spectral resolution. The optimal configuration for the Neural Network was observed in the range of 45-49 Mel coefficients with at least 58 Mel filters (\ref{nnhm}), whereas the Random Forest achieved its best performance with 21-25 Mel coefficients and at least 146 Mel filters (\ref{rfhm}). These results emphasize the fact that birdsong contains faster frequency modulations and more complex harmonic structures compared to human speech, requiring a denser filterbank to effectively capture significant parts of the sound, which is essential for accurate species discrimination. Both machine learning algorithms achieved higher results analysing every coefficient, including the first one, which represents the volume. The first coefficient often reaches massive values, dominating other coefficients and making machine learning performance dependent on the distance of microphone. However, experiments have shown, that including this coefficient in examined dataset actually improves the efficiency (\ref{br}).
 	
 	
 	The difference in the optimal spectral resolutions between the two models highlights the higher sensitivity of the Random Forest to excessive feature counts, which can degrade its performance. In contrast, the Neural Network effectively manages high-dimensional inputs, achieving better performance by capturing more complex patterns within the given data.
-	\subsection{Random Forest}
 	
-	\begin{table}[htbp]
+  \subsection{Random Forest}
+	
+	\begin{table}
 		\centering
 		\caption{Comparison of Random Forest variants with 100 trees}
 		\begin{tabular}{|c|c|c|c|c|c|c|}
@@ -324,10 +310,8 @@ onecolumn,
 		\label{rfc}
 	\end{table}
 	
-	\noindent To select the best model, the algorithms were trained on various parameters. The most important were the criteria (gini, entropy) and max\_features (sqrt, log2, constant). Due to the high power costs and time-consuming nature of Random Forest implementation, the number of trees was set to 100, and the constant for max\_features was set to 2 (\ref{rfc}).
-	
-	
-	
+
+	To select the best model, the algorithms were trained on various parameters. The most important were the criteria (gini, entropy) and max\_features (sqrt, log2, constant). Due to the high power costs and time-consuming nature of Random Forest implementation, the number of trees was set to 100, and the constant for max\_features was set to 2 (\ref{rfc}).
 	\begin{table}[htbp]
 		\centering
 		\caption{Comparison of the number of trees in a forest}
@@ -353,10 +337,56 @@ onecolumn,
 	Once the best model was found, a search began for the largest number of trees in the forest to improve the algorithm's accuracy. The number of trees was checked successively for 100, 200, 300, 400, and 500 trees (\ref{rft}). The two models with the highest accuracies were then taken, their tree counts were added, their tree counts were divided by two, and the integer part was taken. The process was repeated until the appropriate number of trees for the highest accuracy was found. If the same result was found for both tree counts, the number of trees that was closer to the number of trees in the second component with the second highest number of trees was used.
 	
 	\subsection{Neural Network}
-	
-	\hl{proszę dodać ajką analizę innych metryk typu accuracy, error, analizę sieci neuronowej - ile warstw, dlaczego, co jesli sie zmniejszy ta ilosc itd.}
-	
-	\section{Conclusion}
+  Several neural network configurations were tested to analyse how the architecture influences classification performance. The experiments focused on the number of hidden layers and neurons, while dropout was included in most configurations as a regularization method. All models used Leaky ReLU activation in the hidden layers, softmax activation in the output layer, the Adam optimizer and categorical cross-entropy loss. In order to make the comparison consistent, the same general training procedure and evaluation metrics were used for all compared architectures.
+  
+  
+  In the architecture column, only hidden layers are reported. For example, the notation 128-128 means that the neural network contained two hidden layers, each with 128 neurons.
+  
+  \begin{table}[htbp]
+    \centering
+    \caption{Comparison of neural network architectures}
+    \begin{tabular}{|c|c|c|c|c|c|c|}
+      \hline
+      Architecture & Dropout & Accuracy & Precision & Recall & F1 Score & Error \\\hline
+      128 & 0.0 & 0.2812 & 0.2777 & 0.2812 & 0.2707 & 0.7188 \\\hline
+      128-128 & 0.2 & 0.3058 & 0.3021 & 0.3058 & 0.2935 & 0.6942 \\\hline
+      256-128 & 0.2 & 0.3093 & 0.3064 & 0.3093 & 0.2976 & 0.6907 \\\hline
+      512-256 & 0.2 & 0.3168 & 0.3270 & 0.3168 & 0.3060 & 0.6832 \\\hline
+      256-128-64 & 0.2 & 0.2952 & 0.2861 & 0.2952 & 0.2783 & 0.7048 \\\hline
+    \end{tabular}
+    \label{nnac}
+  \end{table}
+
+  The results show that increasing the model size generally improved classification performance up to the 512-256 architecture (Table \ref{nnac}). The simplest model, with one hidden layer of 128 neurons, achieved the weakest results, with an accuracy of 0.2812 and an F1 score of 0.2707. The best performance was obtained by the 512-256 architecture, which achieved an accuracy of 0.3168 and an F1 score of 0.3060. However, the improvement over the 256-128 model was relatively small, which suggests that increasing the number of neurons only slightly improved the final performance.
+
+
+  The deeper 256-128-64 architecture did not improve the results. Its accuracy and F1 score were lower than those of the 512-256 model, which indicates that adding more hidden layers does not always lead to better classification performance. In this case, the additional layer may have made the model harder to train or did not provide useful improvement for the task.
+
+
+  After selecting the 512-256 architecture, an additional experiment was performed to analyse the influence of dropout regularization. Different dropout rates were tested to check whether stronger regularization improves generalization or limits the learning ability of the model.
+
+  \begin{table}[htbp]
+    \centering
+    \caption{Influence of dropout rate for the 512-256 architecture}
+    \begin{tabular}{|c|c|c|c|c|c|}
+      \hline
+      Dropout & Accuracy & Precision & Recall & F1 Score & Error \\\hline
+      0.0 & 0.2912 & 0.3077 & 0.2912 & 0.2823 & 0.7088 \\\hline
+      0.1 & 0.2947 & 0.3095 & 0.2947 & 0.2885 & 0.7053 \\\hline
+      0.2 & 0.3168 & 0.3270 & 0.3168 & 0.3060 & 0.6832 \\\hline
+      0.3 & 0.3183 & 0.3213 & 0.3182 & 0.3072 & 0.6817 \\\hline
+      0.4 & 0.3363 & 0.3363 & 0.3363 & 0.3260 & 0.6637 \\\hline
+      0.5 & 0.3308 & 0.3322 & 0.3308 & 0.3188 & 0.6692 \\\hline
+    \end{tabular}
+    \label{nndropout}
+  \end{table}
+
+  The results show that dropout had a positive influence on the model performance (Table \ref{nndropout}). The best result was obtained with a dropout rate of 0.4, where the model achieved an accuracy of 0.3363 and an F1 score of 0.3260. Increasing dropout to 0.5 slightly decreased the performance, which suggests that too strong regularization can limit the model's ability to learn useful patterns.
+
+
+  Since the task involved classification among many bird species, the obtained accuracy should be interpreted in the context of a difficult multi-class problem. Based on these results, the final selected neural network configuration was the 512-256 architecture with a dropout rate of 0.4.  
+  
+  \section{Conclusion}
 	\hl{do uzupelnienia}
 	
 	\bibliography{bibliography}
