@@ -48,10 +48,8 @@ onecolumn,
 	]
 	\address[1]{Faculty of Applied Mathematics, Silesian University of Technology, Kaszubska 23, 44100 Gliwice, POLAND}
 	
-	\begin{abstract}\hl{do uzupelnienia}
-		\hl{do uzupelnienia}
-		
-		wstep : 1 akapit o tym co zrobiono, jakie wyniki, minimum 180 słów
+	\begin{abstract}
+		With the advancement of sound recognition systems, there is a need for configurations that are as accurate as possible and deliver the best results. In this paper, we present an automated bird recognition system and evaluate its best configurations. The system consists of audio feature extraction using MFCC to convert sound into its numerical representation and two machine learning algorithms - Random Forest and Neural Networks to classify bird species based on th extracted features. Experiments conducted on a dataset of 1148 sound files using a custom feature extraction pipeline revealed substantial performance divergence from standard speech recognition configurations. While the default values consist of 13 Mel coefficients and about 26-40 Mel filters, in this work the best benchmark requires higher numbers. The Neural Networks significantly outperformed Random Forest, achieving a peak F1-score of 0.8472 with an optimal configuration of 48 coefficients and 150 Mel filters. In contrast, the Random Forest reached its maximum F1-score of 0.6669 using 24 coefficients and 178 filters. Individual tests using the full dataset of 21374 MFCC sets for each machine learning algorithm were conducted, revealing the best configuration for both algorithms. Random Forest achieved the highest F1-score value of 0.3022 with 440 trees, while the Neural Networks reached a peak F1-score of 0.3260 utilizing a 512-256 layer architecture with a Dropout rate of 0.4. These results emphasize the importance of parameter optimization in both feature extraction and model design, demonstrating that custom configurations are crucial for accurate species discrimination.
 	\end{abstract}
 	
 	\begin{keywords}
