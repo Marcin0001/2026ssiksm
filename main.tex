@@ -177,30 +177,29 @@ onecolumn,
 	The second classification model used in this study was a neural network. The concept of artificial neural networks dates back to the work of McCulloch and Pitts, who proposed an early mathematical model of a neuron in 1943 \cite{mcculloch1943logical}. The model used in this work belongs to the class of feedforward neural networks, also known as multilayer perceptrons. Such models are composed of interconnected computational units called neurons, organized into an input layer, one or more hidden layers, and an output layer \cite{goodfellow2016deep}. In this study, the input layer received the MFCC feature vector, the hidden layers transformed it into internal representations, and the output layer produced the final bird species prediction.
 	
 
-	Each layer applies a linear transformation followed by a non-linear activation function:
-	
+	Each layer first computes a linear output:
+
 	\begin{equation}
 		z = XW + b
 	\end{equation}
-	
+
+	This output is then passed through an activation function:
+
 	\begin{equation}
 		a = f(z)
 	\end{equation}
+		
+	The activation function introduces non-linearity into the network. Without a non-linear activation function, a sequence of dense layers would be equivalent to a single linear transformation, limiting the model's ability to learn complex relationships among MFCC features. In the initial experiments, ReLU was also considered, but the final neural network configurations used Leaky ReLU in the hidden layers:
+		\begin{equation}
+			f_{\text{LeakyReLU}}(z) =
+			\begin{cases}
+				z, & z > 0 \\
+				\alpha z, & z \leq 0
+			\end{cases}
+		\end{equation}
 	
-  where \(X\) is the input matrix, \(W\) is the weight matrix, \(b\) is the bias vector, \(f\) is the activation function, \(z\) is the linear output of the layer, and \(a\) is the activated output.
-	
+	In the implemented model, \(\alpha = 0.01\). This means that negative values are not removed completely, but only scaled down, which helps maintain gradient flow during training \cite{goodfellow2016deep}.
 
-  The activation function introduces non-linearity into the network. Without a non-linear activation function, a sequence of dense layers would be equivalent to a single linear transformation, limiting the model's ability to learn complex relationships among MFCC features. In the initial experiments, ReLU was also considered, but the final neural network configurations used Leaky ReLU in the hidden layers:
-	\begin{equation}
-		f_{\text{LeakyReLU}}(z) =
-		\begin{cases}
-			z, & z > 0 \\
-			\alpha z, & z \leq 0
-		\end{cases}
-	\end{equation}
-	
-	where \(\alpha\) is a small positive coefficient, equal to 0.01 in the implemented model. Unlike standard ReLU, Leaky ReLU keeps a small slope for negative values, which helps preserve gradient flow during training \cite{goodfellow2016deep}.
-	
 
 	For a multi-class classification problem, the output layer was configured to contain one neuron for each bird species. The softmax function was used to transform the raw output values into probabilities:
 	
