@@ -171,7 +171,7 @@ onecolumn,
 	In this formula, $\hat{y}_{i}^{OOB}$ is the majority vote prediction for sample $i$ using only the specific trees that did not see this sample during their training, and $N$ is the total number of training samples.
 	
 	
-	When it comes to classifying bird species from MFCC data, Random Forest gives us a couple of great advantages: its built-in feature importance scores make it easy to identify which spectral coefficients actually matter, and its ensemble structure keeps it from getting easily thrown off by noisy or irrelevant audio features \cite{huang2024recognition, ahmed2023bird}.
+	When it comes to classifying bird species from MFCC data, Random Forest gives us a couple of great advantages: its built-in feature importance scores make it easy to identify which spectral coefficients actually matter, and its ensemble structure keeps it from getting easily thrown off by noisy or irrelevant audio features \cite{tang2024recognition, wu2023bird}.
 	
 	\subsubsection{Neural Network}
 	The second classification model used in this study was a neural network. The concept of artificial neural networks dates back to the work of McCulloch and Pitts, who proposed an early mathematical model of a neuron in 1943 \cite{mcculloch1943logical}. The model used in this work belongs to the class of feedforward neural networks, also known as multilayer perceptrons. Such models are composed of interconnected computational units called neurons, organized into an input layer, one or more hidden layers, and an output layer \cite{goodfellow2016deep}. In this study, the input layer received the MFCC feature vector, the hidden layers transformed it into internal representations, and the output layer produced the final bird species prediction.
